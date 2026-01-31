@@ -3,7 +3,11 @@ import {
   LayoutDashboard, 
   Calendar as CalendarIcon, 
   X, 
-  LogOut 
+  LogOut,
+  BarChart3,
+  FileText,
+  Users,
+  Megaphone
 } from "lucide-react";
 
 const Sidebar = ({ onClose, activeTab, setActiveTab }) => (
@@ -12,7 +16,7 @@ const Sidebar = ({ onClose, activeTab, setActiveTab }) => (
       <div className="flex items-center justify-between mb-8 md:mb-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shrink-0">A</div>
-          <span className="text-sm font-bold tracking-tight text-[#1A202C] leading-tight text-left">Amrita Vishwa Vidyapeetham</span>
+          <span className="text-md font-bold tracking-tight text-[#1A202C] leading-tight text-left">Amrita Vishwa Vidyapeetham</span>
         </div>
         <button className="lg:hidden p-2 text-slate-500" onClick={onClose}><X size={24} /></button>
       </div>
@@ -22,6 +26,18 @@ const Sidebar = ({ onClose, activeTab, setActiveTab }) => (
         </button>
         <button onClick={() => { setActiveTab("time-table"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "time-table" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
           <CalendarIcon size={20} /> Timetable
+        </button>
+        <button onClick={() => { setActiveTab("workload"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "workload" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+          <BarChart3 size={20} /> Workload
+        </button>
+        <button onClick={() => { setActiveTab("leave-form"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "leave-form" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+          <FileText size={20} /> Leave Form
+        </button>
+        <button onClick={() => { setActiveTab("allocations"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "allocations" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+          <Users size={20} /> Allocations
+        </button>
+        <button onClick={() => { setActiveTab("announcements"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "announcements" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+          <Megaphone size={20} /> Announcements
         </button>
       </nav>
     </div>
