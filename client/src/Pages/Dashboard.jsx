@@ -23,14 +23,14 @@ import {
   Briefcase,
   GraduationCap
 } from 'lucide-react';
-import SidebarContent from '../components/SidebarContent';
+import Sidebar from '../components/Sidebar';
 import InfoBlock from '../components/InfoBlock';
-// HELPER COMPONENTS (Defined outside to prevent re-render errors)
+import { INITIAL_EVENTS, SLOTS } from '../utils/constants';
 
 
 
 
-const Dashboard = () => {
+const Dashboard = ({ activeTab, setActiveTab }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState([
     { id: 1, text: "Grade OS Lab Reports", completed: false },
@@ -59,29 +59,27 @@ const Dashboard = () => {
     setTasks(tasks.filter(t => t.id !== id));
   };
 
-  const scheduleData = [
-    {
-      time: "08:45 AM",
-      courseCode: "CS201",
-      title: "Data Structures & Algorithms",
-      location: "Building B, Room 302",
-      studentCount: 42
-    },
-    {
-      time: "11:15 AM",
-      courseCode: "IT305",
-      title: "Operating Systems Lab",
-      location: "Innovation Hub, Lab 1",
-      studentCount: 28
-    },
-    {
-      time: "02:00 PM",
-      courseCode: "MA102",
-      title: "Discrete Mathematics",
-      location: "Main Block, A-105",
-      studentCount: 56
-    }
-  ];
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const todaysEvents = INITIAL_EVENTS[today] || [];
+  let scheduleData = todaysEvents.map(event => {
+    const slot = SLOTS.find(s => s.id === event.slotId);
+    return {
+      time: slot ? slot.start : 'Unknown',
+      courseCode: event.code,
+      title: event.title,
+      location: event.room,
+      studentCount: event.studentCount
+    };
+  });
+
+  // Filter to only upcoming classes
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+  scheduleData = scheduleData.filter(item => {
+    const [hours, minutes] = item.time.split(':').map(Number);
+    const eventTime = hours * 60 + minutes;
+    return eventTime > currentTime;
+  });
 
   const notifications = [
     { id: 1, text: "Faculty meeting in Hall B", time: "04:30 PM", type: "event", color: "text-amber-600 bg-amber-50" },
@@ -108,7 +106,7 @@ const Dashboard = () => {
         fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <SidebarContent onClose={() => setIsSidebarOpen(false)} />
+        <Sidebar onClose={() => setIsSidebarOpen(false)} activeTab={activeTab} setActiveTab={setActiveTab} />
       </aside>
 
       {/* Main Content Area */}
@@ -165,7 +163,7 @@ const Dashboard = () => {
                         Good Morning, Robert Sir! 👋
                       </h1>
                       <p className="text-slate-500 text-lg font-medium">
-                        You have <span className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4">{scheduleData.length} classes</span> today.
+                        You have <span className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4">{scheduleData.length} classes</span> Now.
                       </p>
                     </div>
                   </div>
@@ -208,14 +206,14 @@ const Dashboard = () => {
             <aside className="w-full xl:w-[380px] 2xl:w-[420px] space-y-6">
               <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
                 <div className="flex justify-between items-center mb-4 px-2 text-left">
-                  <h3 className="font-bold text-slate-800 text-sm">January 2026</h3>
+                  <h3 className="font-bold text-slate-800 text-sm">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-center">
                   {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
                     <span key={idx} className="text-[10px] font-bold text-slate-300 py-1">{day}</span>
                   ))}
-                  {Array.from({ length: 31 }, (_, i) => (
-                    <div key={i} className={`text-[10px] md:text-xs py-2 rounded-xl transition-colors ${i + 1 === 30 ? 'bg-[#8B0000] text-white font-bold shadow-lg shadow-red-900/20' : 'text-slate-500 hover:bg-slate-50'}`}>
+                  {Array.from({ length: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() }, (_, i) => (
+                    <div key={i} className={`text-[10px] md:text-xs py-2 rounded-xl transition-colors ${i + 1 === new Date().getDate() ? 'bg-[#8B0000] text-white font-bold shadow-lg shadow-red-900/20' : 'text-slate-500 hover:bg-slate-50'}`}>
                       {i + 1}
                     </div>
                   ))}
@@ -263,43 +261,71 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-6">
-                {scheduleData.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="group flex flex-col md:flex-row items-center gap-6 p-6 bg-white border border-slate-100 rounded-[1.5rem] transition-all hover:border-[#8B0000]/20"
-                  >
-                    <div className="flex flex-col items-center justify-center min-w-[100px] text-center shrink-0">
-                      <span className="text-xl md:text-2xl font-black text-slate-900 group-hover:text-[#8B0000] transition-colors">
-                        {item.time}
-                      </span>
-                      <div className="h-1 w-8 bg-[#8B0000]/10 rounded-full mt-2"></div>
+                {scheduleData.length > 0 ? (
+                  scheduleData.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="group flex flex-col md:flex-row items-center gap-6 p-6 bg-white border border-slate-100 rounded-[1.5rem] transition-all hover:border-[#8B0000]/20"
+                    >
+                      <div className="flex flex-col items-center justify-center min-w-[100px] text-center shrink-0">
+                        <span className="text-xl md:text-2xl font-black text-slate-900 group-hover:text-[#8B0000] transition-colors">
+                          {item.time}
+                        </span>
+                        <div className="h-1 w-8 bg-[#8B0000]/10 rounded-full mt-2"></div>
+                      </div>
+
+                      <div className="hidden md:block w-px h-12 bg-slate-100" />
+
+                      <div className="flex-1 text-center md:text-left min-w-0 w-full">
+                        <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
+                          <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black rounded-lg tracking-wider shrink-0">
+                            {item.courseCode}
+                          </span>
+                          <h3 className="text-lg font-bold text-slate-800 truncate">
+                            {item.title}
+                          </h3>
+                        </div>
+
+                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-slate-500 text-[11px] font-bold">
+                          <div className="flex items-center gap-2">
+                            <MapPin size={12} className="text-[#8B0000]" />
+                            <span>{item.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Users size={12} className="text-blue-500" />
+                            <span>{item.studentCount} Students</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+                    <div className="relative">
+                      <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-8">
+                        <CheckCircle2 size={48} className="text-emerald-500" />
+                      </div>
+                      <div className="absolute -top-2 -right-2 bg-white shadow-lg rounded-full p-2">
+                        <span className="text-xl">🎓</span>
+                      </div>
                     </div>
 
-                    <div className="hidden md:block w-px h-12 bg-slate-100" />
+                    <h3 className="text-2xl font-black text-slate-800 mb-3">Teaching Schedule Complete</h3>
+                    <p className="text-slate-500 text-lg font-medium max-w-lg leading-relaxed">
+                      All your lectures and sessions for today have concluded. You're officially caught up on your academic calendar.
+                    </p>
 
-                    <div className="flex-1 text-center md:text-left min-w-0 w-full">
-                      <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
-                        <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black rounded-lg tracking-wider shrink-0">
-                          {item.courseCode}
-                        </span>
-                        <h3 className="text-lg font-bold text-slate-800 truncate">
-                          {item.title}
-                        </h3>
+                    <div className="mt-8 flex flex-col items-center gap-4">
+                      <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest">
+                        <Clock size={14} />
+                        Duty Hours Concluded
                       </div>
-
-                      <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-slate-500 text-[11px] font-bold">
-                        <div className="flex items-center gap-2">
-                          <MapPin size={12} className="text-[#8B0000]" />
-                          <span>{item.location}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users size={12} className="text-blue-500" />
-                          <span>{item.studentCount} Students</span>
-                        </div>
-                      </div>
+                      <p className="text-slate-400 text-sm italic">
+                        Have a restful evening, Professor.
+                      </p>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </section>
 

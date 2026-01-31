@@ -6,7 +6,7 @@ import {
   LogOut 
 } from "lucide-react";
 
-const SidebarContent = ({ onClose, activeTab, setActiveTab }) => (
+const Sidebar = ({ onClose, activeTab, setActiveTab }) => (
   <div className="flex flex-col h-full bg-white border-r border-slate-100 shadow-xl lg:shadow-none">
     <div className="p-6 md:p-8">
       <div className="flex items-center justify-between mb-8 md:mb-10">
@@ -20,7 +20,7 @@ const SidebarContent = ({ onClose, activeTab, setActiveTab }) => (
         <button onClick={() => { setActiveTab("dashboard"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "dashboard" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
           <LayoutDashboard size={20} /> Dashboard
         </button>
-        <button onClick={() => { setActiveTab("calendar"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "calendar" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+        <button onClick={() => { setActiveTab("time-table"); onClose(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "time-table" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
           <CalendarIcon size={20} /> Timetable
         </button>
       </nav>
@@ -42,4 +42,4 @@ const SidebarContent = ({ onClose, activeTab, setActiveTab }) => (
   </div>
 );
 
-export default SidebarContent;
+export default Sidebar;

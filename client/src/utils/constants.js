@@ -1,4 +1,4 @@
-export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export const ACADEMIC_YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
@@ -20,8 +20,6 @@ export const SLOTS = [
   { id: 12, start: "17:25", end: "18:15", label: "Slot 12" },
 ];
 
-// Courses assigned to the logged-in teacher
-// Used to populate the dropdown in the AddEventModal
 export const TEACHER_COURSES = [
   { id: "23CSE312", title: "Compilers", years: ["3rd Year"] },
   { id: "23CSE311", title: "Database Systems", years: ["2nd Year", "3rd Year"] },
@@ -31,7 +29,6 @@ export const TEACHER_COURSES = [
   { id: "PRJ-REV", title: "Project Review", years: ["4th Year"] }
 ];
 
-// Initial data updated with Year and Section metadata
 export const INITIAL_EVENTS = {
   "Monday": [
     { 
@@ -41,7 +38,8 @@ export const INITIAL_EVENTS = {
       room: "A-205", 
       type: "Theory", 
       year: "3rd Year", 
-      section: "A" 
+      section: "A",
+      studentCount: 42
     },
     { 
       slotId: 4, 
@@ -50,7 +48,8 @@ export const INITIAL_EVENTS = {
       room: "SF PG Lab", 
       type: "Lab", 
       year: "3rd Year", 
-      section: "A" 
+      section: "A",
+      studentCount: 28
     },
     { 
       slotId: 5, 
@@ -59,7 +58,8 @@ export const INITIAL_EVENTS = {
       room: "SF PG Lab", 
       type: "Lab", 
       year: "3rd Year", 
-      section: "A" 
+      section: "A",
+      studentCount: 28
     },
     { 
       slotId: 9, 
@@ -68,7 +68,8 @@ export const INITIAL_EVENTS = {
       room: "B-102", 
       type: "Theory", 
       year: "2nd Year", 
-      section: "C" 
+      section: "C",
+      studentCount: 56
     }
   ],
   "Tuesday": [
@@ -79,7 +80,8 @@ export const INITIAL_EVENTS = {
       room: "Main Hall", 
       type: "Review", 
       year: "4th Year", 
-      section: "B" 
+      section: "B",
+      studentCount: 15
     },
     { 
       slotId: 10, 
@@ -88,7 +90,8 @@ export const INITIAL_EVENTS = {
       room: "A-205", 
       type: "Theory", 
       year: "3rd Year", 
-      section: "A" 
+      section: "A",
+      studentCount: 35
     }
   ],
   "Wednesday": [
@@ -99,7 +102,8 @@ export const INITIAL_EVENTS = {
       room: "B-202", 
       type: "Theory", 
       year: "4th Year", 
-      section: "A" 
+      section: "A",
+      studentCount: 22
     },
     { 
       slotId: 4, 
@@ -108,12 +112,46 @@ export const INITIAL_EVENTS = {
       room: "CP Lab 2", 
       type: "Lab", 
       year: "2nd Year", 
-      section: "D" 
+      section: "D",
+      studentCount: 30
     }
   ],
   "Thursday": [],
-  "Friday": []
+  "Friday": [],
+  "Saturday": [
+    { 
+      slotId: 2, 
+      code: "23CSE313", 
+      title: "Artificial Intelligence", 
+      room: "B-202", 
+      type: "Theory", 
+      year: "4th Year", 
+      section: "A",
+      studentCount: 25
+    },
+    { 
+      slotId: 4, 
+      code: "23CSE314", 
+      title: "OS Lab", 
+      room: "CP Lab 2", 
+      type: "Lab", 
+      year: "2nd Year", 
+      section: "D",
+      studentCount: 32
+    },
+    { 
+      slotId: 5, 
+      code: "23CSE314", 
+      title: "OS Lab", 
+      room: "CP Lab 2", 
+      type: "Lab", 
+      year: "2nd Year", 
+      section: "D",
+      studentCount: 32
+    }
+  ]
 };
+
 export const COLORS = {
   Theory: 'bg-indigo-50 text-indigo-700 border-indigo-100',
   Lab: 'bg-orange-50 text-orange-700 border-orange-100',
