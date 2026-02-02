@@ -4,6 +4,35 @@ export const ACADEMIC_YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
 export const SECTIONS = ["A", "B", "C", "D"];
 
+export const ROOMS = [
+  // Theory Classrooms
+  { id: "A-101", name: "A-101", type: "Theory", capacity: 80 },
+  { id: "A-102", name: "A-102", type: "Theory", capacity: 80 },
+  { id: "A-103", name: "A-103", type: "Theory", capacity: 80 },
+  { id: "A-104", name: "A-104", type: "Theory", capacity: 80 },
+  { id: "A-105", name: "A-105", type: "Theory", capacity: 80 },
+  { id: "A-201", name: "A-201", type: "Theory", capacity: 80 },
+  { id: "A-202", name: "A-202", type: "Theory", capacity: 80 },
+  { id: "A-203", name: "A-203", type: "Theory", capacity: 80 },
+  { id: "A-204", name: "A-204", type: "Theory", capacity: 80 },
+  { id: "A-205", name: "A-205", type: "Theory", capacity: 80 },
+  { id: "B-101", name: "B-101", type: "Theory", capacity: 80 },
+  { id: "B-102", name: "B-102", type: "Theory", capacity: 80 },
+  { id: "B-201", name: "B-201", type: "Theory", capacity: 80 },
+  { id: "B-202", name: "B-202", type: "Theory", capacity: 80 },
+  
+  // Computer Labs
+  { id: "CP Lab 1", name: "CP Lab 1", type: "Lab", capacity: 80 },
+  { id: "CP Lab 2", name: "CP Lab 2", type: "Lab", capacity: 80 },
+  { id: "CP Lab 3", name: "CP Lab 3", type: "Lab", capacity: 80 },
+  { id: "SF PG Lab", name: "SF PG Lab", type: "Lab", capacity: 80 },
+  
+  // Seminar Halls
+  { id: "Main Hall", name: "Main Hall", type: "Review", capacity: 200 },
+  { id: "Seminar Hall 1", name: "Seminar Hall 1", type: "Review", capacity: 150 },
+  { id: "Seminar Hall 2", name: "Seminar Hall 2", type: "Review", capacity: 150 }
+];
+
 export const SLOTS = [
   { id: 1, start: "08:00", end: "08:50", label: "Slot 1" },
   { id: 2, start: "08:50", end: "09:40", label: "Slot 2" },

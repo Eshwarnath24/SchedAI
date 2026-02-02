@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
-import { TEACHER_COURSES, ACADEMIC_YEARS, SECTIONS } from "../utils/constants";
+import { TEACHER_COURSES, ACADEMIC_YEARS, SECTIONS, ROOMS } from "../utils/constants";
 
 export const AddEventModal = ({ isOpen, onClose, onSubmit, day, slotId }) => {
   const [formData, setFormData] = useState({
@@ -71,11 +71,18 @@ export const AddEventModal = ({ isOpen, onClose, onSubmit, day, slotId }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1">Room</label>
-              <input required value={formData.room} onChange={e => setFormData({...formData, room: e.target.value})} placeholder="A-205" className="w-full px-4 py-4 bg-slate-50 border-transparent rounded-2xl text-sm font-bold outline-none focus:bg-white focus:ring-2 focus:ring-[#8B0000]/5" />
+              <select required value={formData.room} onChange={e => setFormData({...formData, room: e.target.value})} className="w-full px-4 py-4 bg-slate-50 rounded-2xl text-sm font-bold outline-none appearance-none transition-all focus:bg-white focus:ring-2 focus:ring-[#8B0000]/5">
+                <option value="">Select Room...</option>
+                {ROOMS.filter(room => room.type === formData.type).map(room => (
+                  <option key={room.id} value={room.id}>
+                    {room.name} ({room.capacity} seats)
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1">Type</label>
-              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full px-4 py-4 bg-slate-50 rounded-2xl text-sm font-bold outline-none appearance-none transition-all focus:bg-white focus:ring-2 focus:ring-[#8B0000]/5"><option>Theory</option> <option>Lab</option> <option>Review</option></select>
+              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value, room: ''})} className="w-full px-4 py-4 bg-slate-50 rounded-2xl text-sm font-bold outline-none appearance-none transition-all focus:bg-white focus:ring-2 focus:ring-[#8B0000]/5"><option>Theory</option> <option>Lab</option> <option>Review</option></select>
             </div>
           </div>
 

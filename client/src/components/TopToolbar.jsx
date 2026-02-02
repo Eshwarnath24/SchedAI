@@ -3,7 +3,7 @@ import { Menu, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const TopToolbar = ({ onOpenSidebar, view, setView, title = "Academic Matrix", subtitle = "Odd Semester • Ettimadai" }) => {
   return (
-    <div className="p-4 md:p-6 lg:p-8 pb-0 shrink-0">
+    <div className="p-4 md:p-6 md:pb-0 lg:p-8 lg:pb-0 pb-0 shrink-0">
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -36,18 +36,13 @@ const TopToolbar = ({ onOpenSidebar, view, setView, title = "Academic Matrix", s
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-            <input type="text" placeholder="Search Matrix..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 rounded-xl text-xs font-medium border-transparent focus:bg-white focus:ring-2 focus:ring-[#8B0000]/10 transition-all outline-none" />
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] font-black text-slate-500 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 transition-all"><Filter size={14} /> Filter</button>
-            <div className="flex border-l border-slate-100 pl-2">
-              <button className="p-2 text-slate-300"><ChevronLeft size={18}/></button>
-              <button className="p-2 text-slate-300"><ChevronRight size={18}/></button>
-            </div>
-          </div>
+        <div className='flex justify-end ml-1'>
+          <button 
+            onClick={() => window.location.href = '/leave-form'} 
+            className="px-4 py-2 bg-[#8B0000] text-white rounded-lg font-semibold hover:bg-[#6B0000] transition-colors"
+          >
+            Leave Form
+          </button>
         </div>
       </div>
     </div>
