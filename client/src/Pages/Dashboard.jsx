@@ -30,7 +30,7 @@ import { INITIAL_EVENTS, SLOTS } from '../utils/constants';
 
 
 
-const Dashboard = ({ activeTab, setActiveTab }) => {
+const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState([
     { id: 1, text: "Grade OS Lab Reports", completed: false },
@@ -106,7 +106,7 @@ const Dashboard = ({ activeTab, setActiveTab }) => {
         fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <Sidebar onClose={() => setIsSidebarOpen(false)} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </aside>
 
       {/* Main Content Area */}

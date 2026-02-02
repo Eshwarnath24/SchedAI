@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 
-const Announcements = ({ activeTab, setActiveTab }) => {
+const Announcements = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -19,7 +19,7 @@ const Announcements = ({ activeTab, setActiveTab }) => {
         fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <Sidebar onClose={() => setIsSidebarOpen(false)} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </aside>
 
       {/* Main Content Area */}

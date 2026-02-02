@@ -7,7 +7,7 @@ import Sidebar from "../components/Sidebar";
 import TopToolbar from "../components/TopToolbar";
 import { DAYS, SLOTS, INITIAL_EVENTS } from "../utils/constants";
 
-export default function TimetablePage({ activeTab, setActiveTab }) {
+export default function TimetablePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [view, setView] = useState("week");
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -84,19 +84,6 @@ export default function TimetablePage({ activeTab, setActiveTab }) {
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
   };
 
-  if (activeTab === 'dashboard') {
-    return (
-      <div className="flex h-screen bg-[#F8FAFC]">
-        <aside className="w-72 hidden lg:block bg-white border-r"><Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onClose={() => {}} /></aside>
-        <div className="flex-1 p-10">
-          <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden mb-4"><Menu /></button>
-          <h1 className="text-3xl font-black">Dashboard</h1>
-          <p className="text-slate-500 mt-2">Welcome back, Dr. Robert Fox.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
       <AddEventModal {...addModal} onClose={() => setAddModal({ ...addModal, isOpen: false })} onSubmit={handleSaveEvent} />
@@ -106,7 +93,7 @@ export default function TimetablePage({ activeTab, setActiveTab }) {
         fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <Sidebar onClose={() => setIsSidebarOpen(false)} activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden">
