@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   LayoutDashboard,
   Calendar as CalendarIcon,
@@ -25,12 +25,11 @@ import {
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import InfoBlock from '../components/InfoBlock';
-import { INITIAL_EVENTS, SLOTS } from '../utils/constants';
-
-
-
+import { SLOTS } from '../utils/constants';
+import { AppContext } from '../context/AppContext';
 
 const Dashboard = () => {
+  const { events } = useContext(AppContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState([
     { id: 1, text: "Grade OS Lab Reports", completed: false },
@@ -58,9 +57,9 @@ const Dashboard = () => {
   const deleteTask = (id) => {
     setTasks(tasks.filter(t => t.id !== id));
   };
-
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const todaysEvents = INITIAL_EVENTS[today] || [];
+  const todaysEvents = (events && events[today]) || [];
+
   let scheduleData = todaysEvents.map(event => {
     const slot = SLOTS.find(s => s.id === event.slotId);
     return {
@@ -68,11 +67,12 @@ const Dashboard = () => {
       courseCode: event.code,
       title: event.title,
       location: event.room,
-      studentCount: event.studentCount
+      studentCount: event.studentCount,
+      isCancelled: !!event.isCancelled
     };
   });
 
-  // Filter to only upcoming classes
+  // Filter to only upcoming classes (including cancelled ones for visibility)
   const now = new Date();
   const currentTime = now.getHours() * 60 + now.getMinutes();
   scheduleData = scheduleData.filter(item => {
@@ -80,6 +80,9 @@ const Dashboard = () => {
     const eventTime = hours * 60 + minutes;
     return eventTime > currentTime;
   });
+
+  // Count only non-cancelled upcoming classes
+  const activeClassesCount = scheduleData.filter(item => !item.isCancelled).length;
 
   const notifications = [
     { id: 1, text: "Faculty meeting in Hall B", time: "04:30 PM", type: "event", color: "text-amber-600 bg-amber-50" },
@@ -163,7 +166,7 @@ const Dashboard = () => {
                         Good Morning, Robert Sir! 👋
                       </h1>
                       <p className="text-slate-500 text-lg font-medium">
-                        You have <span className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4">{scheduleData.length} classes</span> Now.
+                        You have <span className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4">{activeClassesCount} classes</span> Now.
                       </p>
                     </div>
                   </div>
@@ -268,33 +271,40 @@ const Dashboard = () => {
                       className="group flex flex-col md:flex-row items-center gap-6 p-6 bg-white border border-slate-100 rounded-[1.5rem] transition-all hover:border-[#8B0000]/20"
                     >
                       <div className="flex flex-col items-center justify-center min-w-[100px] text-center shrink-0">
-                        <span className="text-xl md:text-2xl font-black text-slate-900 group-hover:text-[#8B0000] transition-colors">
+                        <span className={`text-xl md:text-2xl font-black transition-colors ${item.isCancelled ? 'text-slate-300' : 'text-slate-900 group-hover:text-[#8B0000]'}`}>
                           {item.time}
                         </span>
-                        <div className="h-1 w-8 bg-[#8B0000]/10 rounded-full mt-2"></div>
+                        <div className={`h-1 w-8 rounded-full mt-2 ${item.isCancelled ? 'bg-slate-200' : 'bg-[#8B0000]/10'}`}></div>
                       </div>
 
                       <div className="hidden md:block w-px h-12 bg-slate-100" />
 
                       <div className="flex-1 text-center md:text-left min-w-0 w-full">
                         <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
-                          <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black rounded-lg tracking-wider shrink-0">
+                          <span className={`px-3 py-1 text-[9px] font-black rounded-lg tracking-wider shrink-0 ${item.isCancelled ? 'bg-slate-200 text-slate-500' : 'bg-slate-900 text-white'}`}>
                             {item.courseCode}
                           </span>
-                          <h3 className="text-lg font-bold text-slate-800 truncate">
+                          <h3 className={`text-lg font-bold truncate ${item.isCancelled ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
                             {item.title}
                           </h3>
                         </div>
 
-                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-slate-500 text-[11px] font-bold">
-                          <div className="flex items-center gap-2">
-                            <MapPin size={12} className="text-[#8B0000]" />
-                            <span>{item.location}</span>
+                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-[11px] font-bold">
+                          <div className="flex items-center gap-2 text-slate-500">
+                            <MapPin size={12} className={item.isCancelled ? 'text-slate-300' : 'text-[#8B0000]'} />
+                            <span className={item.isCancelled ? 'text-slate-400' : ''}>{item.location}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Users size={12} className="text-blue-500" />
-                            <span>{item.studentCount} Students</span>
-                          </div>
+                          {!item.isCancelled ? (
+                            <div className="flex items-center gap-2 text-slate-500">
+                              <Users size={12} className="text-blue-500" />
+                              <span>{item.studentCount} Students</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-red-500">
+                              <Trash2 size={12} />
+                              <span>Class Cancelled</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

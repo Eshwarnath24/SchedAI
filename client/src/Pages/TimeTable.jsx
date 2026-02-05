@@ -1,11 +1,18 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Menu, Plus, MapPin, Trash2 } from "lucide-react";
 import { AddEventModal } from "../components/AddEventModal";
 import { EditEventModal } from "../components/EditEventModal";
 import Sidebar from "../components/Sidebar";
 import TopToolbar from "../components/TopToolbar";
-import { DAYS, SLOTS, INITIAL_EVENTS } from "../utils/constants";
+import { DAYS, SLOTS } from "../utils/constants";
+import { AppContext } from "../context/AppContext";
+import {
+  addClassToTimetable,
+  cancelClassInTimetable,
+  restoreClassInTimetable,
+  shiftClassInTimetable,
+} from "../utils/timetableData";
 
 export default function TimetablePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -15,7 +22,7 @@ export default function TimetablePage() {
   const todayName = DAYS[currentTime.getDay() - 1] || (currentTime.getDay() === 6 ? "Saturday" : "");
   const [activeDay, setActiveDay] = useState(todayName || "Monday");
 
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const { events, setEvents } = useContext(AppContext);
   const [addModal, setAddModal] = useState({ isOpen: false, day: null, slotId: null });
   const [editModal, setEditModal] = useState({ isOpen: false, event: null, day: null, slotId: null });
 
@@ -44,42 +51,35 @@ export default function TimetablePage() {
   };
 
   const handleSaveEvent = (newEvent) => {
-    setEvents(prev => ({ ...prev, [addModal.day]: [...(prev[addModal.day] || []), newEvent] }));
+    setEvents((prev) => {
+      const { events: next, error } = addClassToTimetable(prev, addModal.day, newEvent);
+      if (error) {
+        alert(error);
+        return prev;
+      }
+      return next;
+    });
     setAddModal({ isOpen: false, day: null, slotId: null });
   };
 
   const handleDeleteEvent = (id, day, scope) => {
-    setEvents(prev => {
-      const updatedDayEvents = prev[day].map(e => e.id === id ? { ...e, isCancelled: true, cancelScope: scope } : e);
-      return { ...prev, [day]: updatedDayEvents };
-    });
+    setEvents((prev) => cancelClassInTimetable(prev, day, id, scope).events);
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
   };
 
   const handleRestoreEvent = (id, day) => {
-    setEvents(prev => {
-      const updatedDayEvents = prev[day].map(e => e.id === id ? { ...e, isCancelled: false, cancelScope: null } : e);
-      return { ...prev, [day]: updatedDayEvents };
-    });
+    setEvents((prev) => restoreClassInTimetable(prev, day, id).events);
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
   };
 
   const handleShiftEvent = (id, oldDay, data) => {
-    setEvents(prev => {
-      const newState = { ...prev };
-      const sourceEvents = [...(newState[oldDay] || [])];
-      const eventIndex = sourceEvents.findIndex(e => e.id === id);
-      if (eventIndex === -1) return prev;
-      
-      const [movedEvent] = sourceEvents.splice(eventIndex, 1);
-      newState[oldDay] = sourceEvents;
-      
-      const updatedEvent = { ...movedEvent, slotId: data.newSlotId, scope: data.scope, isCancelled: false };
-      const targetEvents = [...(newState[data.newDay] || [])];
-      targetEvents.push(updatedEvent);
-      newState[data.newDay] = targetEvents;
-      
-      return newState;
+    setEvents((prev) => {
+      const { events: next, error } = shiftClassInTimetable(prev, id, oldDay, data);
+      if (error) {
+        alert(error);
+        return prev;
+      }
+      return next;
     });
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
   };
