@@ -8,7 +8,8 @@ import {
   BarChart3,
   FileText,
   Users,
-  Megaphone
+  Megaphone,
+  Activity
 } from "lucide-react";
 
 const Sidebar = ({ onClose }) => {
@@ -34,6 +35,9 @@ const Sidebar = ({ onClose }) => {
           </Link>
           <Link to="/workload" onClick={onClose} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "workload" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
             <BarChart3 size={20} /> Workload
+          </Link>
+          <Link to="/reports" onClick={onClose} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "reports" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+            <Activity size={20} /> Reports
           </Link>
           <Link to="/leave-form" onClick={onClose} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "leave-form" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
             <FileText size={20} /> Leave Form
