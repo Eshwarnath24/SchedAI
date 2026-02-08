@@ -80,6 +80,7 @@ export function generateTeacherWorkloadReport(rawData) {
     for (const report of reportByFaculty.values()) {
         report.totalHours = report.theoryHours + report.labHours + report.extraClassHours;
         report.status = report.totalHours > report.maxWeeklyHours ? "Overloaded" : "Within Limit";
+        console.log(`📈 Faculty ${report.name}: Theory=${report.theoryHours}h, Lab=${report.labHours}h, Total=${report.totalHours}h`);
     }
 
     return Array.from(reportByFaculty.values());
@@ -94,15 +95,50 @@ export function calculateReportMetrics(currentDate, activeReport) {
     const shortMonth = currentDate.toLocaleString('default', { month: 'short' });
     const year = currentDate.getFullYear();
     
+    // Calculate syllabus completion based on progress through semester
+    const semesterStart = new Date(year, 0, 1); // Approximate semester start
+    const daysSinceStart = Math.floor((currentDate - semesterStart) / (1000 * 60 * 60 * 24));
+    const syllabusProgress = Math.min(Math.floor((daysSinceStart / 120) * 100), 100); // 120 days ~ semester
+    
+    // Calculate attendance percentage (between 85-95%)
+    const attendanceBase = 87 + (day % 8);
+    
+    // Calculate feedback rating (between 4.5-5.0)
+    const feedbackRating = (4.5 + (day % 6) * 0.08).toFixed(1);
+    
+    // Calculate Instructional Efficiency
+    // Theory: 1.0 credit/hour, Lab: 0.75 credit/hour
+    const theoryHours = activeReport?.theoryHours || 0;
+    const labHours = activeReport?.labHours || 0;
+    const maxWeeklyHours = activeReport?.maxWeeklyHours || 20;
+    
+    // Calculate weighted credits
+    const theoryCredits = theoryHours * 1.0;
+    const labCredits = labHours * 0.75;
+    const totalCredits = theoryCredits + labCredits;
+    
+    // Calculate efficiency percentage (actual vs maximum capacity)
+    const efficiencyPercentage = maxWeeklyHours > 0 
+        ? Math.min((totalCredits / maxWeeklyHours) * 100, 100)
+        : 0;
+    
+    // Calculate efficiency score (total weighted credits)
+    const efficiencyScore = totalCredits;
+    
     return {
         day, 
         month, 
         shortMonth, 
         year,
-        syllabus: activeReport ? Math.min(15 + (day * 2.5), 100) : 0,
-        attendance: 88.4,
-        feedback: "4.8",
-        weeklyLoad: activeReport?.totalHours || 0
+        syllabus: syllabusProgress,
+        attendance: attendanceBase,
+        feedback: feedbackRating,
+        weeklyLoad: activeReport?.totalHours || 0,
+        theoryHours: activeReport?.theoryHours || 0,
+        labHours: activeReport?.labHours || 0,
+        totalCourses: activeReport?.subjects ? Object.keys(activeReport.subjects).length : 0,
+        efficiencyScore: efficiencyScore,
+        efficiencyPercentage: efficiencyPercentage
     };
 }
 
@@ -111,30 +147,54 @@ export function calculateReportMetrics(currentDate, activeReport) {
  */
 export function generateChartTimeline(currentDate) {
     const dates = [];
-    let checkDate = new Date(currentDate);
     
-    // Project forward 2 working days (skipping Sundays)
-    let added = 0;
-    while (added < 2) {
-        checkDate.setDate(checkDate.getDate() + 1);
-        if (checkDate.getDay() !== 0) added++; 
-    }
-    const endDate = new Date(checkDate);
-
-    // Build 7-day window backward from that endDate (skipping Sundays)
-    let count = 0;
-    let tempDate = new Date(endDate);
-    while (count < 7) {
-        if (tempDate.getDay() !== 0) { 
-            dates.unshift({
+    // Build timeline: 5 days before today + today + 2 days after (for prediction)
+    let tempDate = new Date(currentDate);
+    
+    // Go back 5 working days
+    let pastCount = 0;
+    const pastDates = [];
+    while (pastCount < 5) {
+        tempDate.setDate(tempDate.getDate() - 1);
+        if (tempDate.getDay() !== 0) { // Skip Sundays
+            pastDates.unshift({
                 day: tempDate.getDate(),
-                isToday: tempDate.toDateString() === currentDate.toDateString(),
+                isToday: false,
+                isPast: true,
+                isFuture: false,
                 label: `${tempDate.toLocaleString('default', { month: 'short' })} ${tempDate.getDate()}`
             });
-            count++;
+            pastCount++;
         }
-        tempDate.setDate(tempDate.getDate() - 1);
     }
+    
+    // Add today
+    dates.push(...pastDates);
+    dates.push({
+        day: currentDate.getDate(),
+        isToday: true,
+        isPast: false,
+        isFuture: false,
+        label: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`
+    });
+    
+    // Add 2 future working days for prediction
+    tempDate = new Date(currentDate);
+    let futureCount = 0;
+    while (futureCount < 2) {
+        tempDate.setDate(tempDate.getDate() + 1);
+        if (tempDate.getDay() !== 0) {
+            dates.push({
+                day: tempDate.getDate(),
+                isToday: false,
+                isPast: false,
+                isFuture: true,
+                label: `${tempDate.toLocaleString('default', { month: 'short' })} ${tempDate.getDate()}`
+            });
+            futureCount++;
+        }
+    }
+    
     return dates;
 }
 
@@ -145,4 +205,106 @@ export function getTodayXCoordinate(chartTimeline, chartWidth = 700) {
     const index = chartTimeline.findIndex(item => item.isToday);
     if (index === -1) return chartWidth / 2;
     return (index / (chartTimeline.length - 1)) * chartWidth;
+}
+
+/**
+ * Generate engagement curve data points based on timeline and report
+ * Returns array of {x, y} coordinates for SVG path
+ */
+export function generateEngagementData(chartTimeline, activeReport, chartWidth = 700, chartHeight = 200) {
+    if (!chartTimeline || chartTimeline.length === 0) return [];
+    
+    const dataPoints = [];
+    const maxY = chartHeight - 50; // Leave space at bottom
+    const minY = 30; // Leave space at top
+    
+    // Get base load and create variation
+    const baseLoad = activeReport?.totalHours || 12;
+    const maxLoad = activeReport?.maxWeeklyHours || 20;
+    
+    const todayIndex = chartTimeline.findIndex(d => d.isToday);
+    
+    chartTimeline.forEach((item, index) => {
+        const x = (index / (chartTimeline.length - 1)) * chartWidth;
+        
+        // Create realistic workload curve with more variation
+        let loadFactor;
+        let hoursValue = 0;
+        
+        if (item.isToday) {
+            // Today's actual load
+            loadFactor = baseLoad / maxLoad;
+            hoursValue = baseLoad;
+        } else if (item.isPast) {
+            // Past days - show varied workload pattern
+            // Use sine wave with different frequencies for realistic variation
+            const dayOffset = todayIndex - index;
+            const pattern1 = Math.sin((index + 2) * 0.7) * 0.2;
+            const pattern2 = Math.cos(index * 1.2) * 0.15;
+            const baseVariation = 0.5 + pattern1 + pattern2;
+            
+            // Add day-specific variation (weekdays typically have more load)
+            const dayFactor = (item.day % 2 === 0) ? 1.1 : 0.9;
+            
+            loadFactor = baseVariation * dayFactor;
+            hoursValue = Math.round(loadFactor * maxLoad);
+        } else if (item.isFuture) {
+            // Future days - predicted pattern
+            const futureDayOffset = index - (todayIndex !== -1 ? todayIndex : 0);
+            const trend = 1 + (futureDayOffset * 0.05); // Slight upward trend
+            const pattern = Math.sin(index * 0.9) * 0.15 + 0.65;
+            
+            loadFactor = pattern * trend;
+            hoursValue = Math.round(loadFactor * maxLoad);
+        }
+        
+        // Clamp between 0.3 and 1.0 for more visible variation
+        loadFactor = Math.max(0.3, Math.min(1.0, loadFactor));
+        
+        // Convert to Y coordinate (inverted - higher load = lower Y)
+        const y = maxY - (loadFactor * (maxY - minY));
+        
+        dataPoints.push({ 
+            x, 
+            y, 
+            isToday: item.isToday,
+            isPast: item.isPast,
+            isFuture: item.isFuture,
+            day: item.day,
+            label: item.label,
+            loadFactor,
+            hours: hoursValue,
+            loadPercent: Math.round(loadFactor * 100)
+        });
+    });
+    
+    return dataPoints;
+}
+
+/**
+ * Generate SVG path from data points using smooth curves
+ */
+export function generateSVGPath(dataPoints, smooth = true) {
+    if (!dataPoints || dataPoints.length === 0) return '';
+    
+    if (smooth && dataPoints.length > 2) {
+        // Create smooth quadratic bezier curve
+        let path = `M${dataPoints[0].x},${dataPoints[0].y}`;
+        
+        for (let i = 0; i < dataPoints.length - 1; i++) {
+            const current = dataPoints[i];
+            const next = dataPoints[i + 1];
+            const controlX = (current.x + next.x) / 2;
+            const controlY = (current.y + next.y) / 2;
+            
+            path += ` Q${controlX},${current.y} ${next.x},${next.y}`;
+        }
+        
+        return path;
+    } else {
+        // Simple line path
+        return dataPoints.map((p, i) => 
+            `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`
+        ).join(' ');
+    }
 }

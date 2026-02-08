@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Trash2, RefreshCw, Move } from "lucide-react";
 import { DAYS, SLOTS } from "../utils/constants";
 
-export const EditEventModal = ({ isOpen, onClose, onUpdate, onDelete, onRestore, event, day, slotId }) => {
+export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onMarkScheduled, event, day, slotId }) => {
   const initialFormData = {
     scope: event?.cancelScope || 'Today',
     newDay: day || '',
@@ -30,7 +30,10 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onDelete, onRestore,
 
   if (!isOpen || !event) return null;
 
-  const isCancelled = event.isCancelled;
+  const status = event.status || 'scheduled';
+  const isCancelled = status === 'cancelled' || event.isCancelled;
+  const isCompleted = status === 'completed';
+  const isScheduled = status === 'scheduled' || (!status && !event.isCancelled);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -48,23 +51,50 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onDelete, onRestore,
         </div>
 
         <div className="p-8 space-y-8">
-          {isCancelled ? (
-            <div className="bg-red-50 p-6 rounded-[1.5rem] border border-red-100 flex flex-col gap-4">
-               <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white rounded-xl shadow-sm"><Trash2 className="text-red-500" size={24}/></div>
-                  <div>
-                      <p className="text-sm font-black text-red-900">This class is currently cancelled.</p>
-                      <p className="text-[10px] font-bold text-red-600 opacity-70 uppercase tracking-widest">Scope: {event.cancelScope}</p>
-                  </div>
-               </div>
-               <button 
-                onClick={() => onRestore(event.id, day)}
-                className="w-full flex items-center justify-center gap-2 bg-[#8B0000] py-4 rounded-2xl text-xs font-black uppercase text-white shadow-lg shadow-red-900/20 hover:scale-[1.02] active:scale-95 transition-all"
-               >
-                 <RefreshCw size={14} /> Restore to Original Slot
-               </button>
+          {/* Class Status Display */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div className="text-[10px] font-black uppercase text-slate-400 mb-2">Current Status</div>
+            <div className="flex items-center gap-2">
+              <div className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase ${
+                isCompleted ? 'bg-green-100 text-green-800' :
+                isCancelled ? 'bg-red-100 text-red-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {isCompleted ? '✓ Completed' : isCancelled ? '✗ Cancelled' : '○ Scheduled'}
+              </div>
             </div>
-          ) : (
+            {isScheduled && (
+              <p className="text-[9px] text-slate-500 mt-2 italic">
+                * Classes are automatically marked as completed when time ends
+              </p>
+            )}
+          </div>
+
+          {/* Status Actions */}
+          <div>
+            <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">Manual Status Override</label>
+            <div className="space-y-2">
+              {!isCancelled && (
+                <button
+                  onClick={() => onMarkCancelled(event.id, day, formData.scope)}
+                  className="w-full flex items-center justify-center gap-2 bg-red-600 py-4 rounded-2xl text-xs font-black uppercase text-white shadow-lg shadow-red-900/20 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  <Trash2 size={14} /> Mark as Cancelled
+                </button>
+              )}
+              {(isCancelled || isCompleted) && (
+                <button
+                  onClick={() => onMarkScheduled(event.id, day)}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 py-4 rounded-2xl text-xs font-black uppercase text-white shadow-lg shadow-blue-900/20 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  <RefreshCw size={14} /> Mark as Scheduled
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Reschedule Section - Only for non-completed classes */}
+          {!isCompleted && (
             <>
               <div>
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">Update Scope</label>
@@ -112,15 +142,6 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onDelete, onRestore,
                   className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-[1.01] active:scale-95 transition-all"
                 >
                   <Move size={16} /> Confirm Shift
-                </button>
-              </div>
-
-              <div className="pt-6 border-t border-slate-100 flex gap-4">
-                <button 
-                  onClick={() => onDelete(event.id, day, formData.scope)}
-                  className="flex-1 py-4 bg-red-50 text-red-600 font-black text-[10px] uppercase tracking-widest hover:bg-red-100 rounded-2xl flex items-center justify-center gap-2 transition-all"
-                >
-                  <Trash2 size={16} /> Cancel Class
                 </button>
               </div>
             </>

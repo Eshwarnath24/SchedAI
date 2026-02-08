@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calendar as CalendarIcon,
@@ -29,7 +30,8 @@ import { SLOTS } from '../utils/constants';
 import { AppContext } from '../context/AppContext';
 
 const Dashboard = () => {
-  const { events } = useContext(AppContext);
+  const { events, currentTeacher, announcementsList } = useContext(AppContext);
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState([
     { id: 1, text: "Grade OS Lab Reports", completed: false },
@@ -84,14 +86,27 @@ const Dashboard = () => {
   // Count only non-cancelled upcoming classes
   const activeClassesCount = scheduleData.filter(item => !item.isCancelled).length;
 
-  const notifications = [
-    { id: 1, text: "Faculty meeting in Hall B", time: "04:30 PM", type: "event", color: "text-amber-600 bg-amber-50" },
-    { id: 2, text: "Submit attendance report", time: "By EOD", type: "task", color: "text-red-600 bg-red-50" },
-    { id: 3, text: "New research grant open", time: "Notice", type: "info", color: "text-blue-600 bg-blue-50" },
-    { id: 4, text: "Project review with final year students", time: "11:00 AM", type: "event", color: "text-emerald-600 bg-emerald-50" },
-    { id: 5, text: "Department council meeting", time: "02:00 PM", type: "event", color: "text-purple-600 bg-purple-50" }
-
-  ];
+  // Get recent announcements for agenda (top 5)
+  const recentAnnouncements = announcementsList
+    .sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
+    .slice(0, 5)
+    .map(announcement => {
+      // Map announcement type to color scheme
+      const colorMap = {
+        urgent: "text-red-600 bg-red-50",
+        academic: "text-blue-600 bg-blue-50",
+        student: "text-emerald-600 bg-emerald-50",
+        general: "text-amber-600 bg-amber-50"
+      };
+      
+      return {
+        id: announcement.id,
+        text: announcement.title,
+        time: announcement.time,
+        type: announcement.type,
+        color: colorMap[announcement.type] || "text-slate-600 bg-slate-50"
+      };
+    });
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-hidden">
@@ -142,11 +157,11 @@ const Dashboard = () => {
                   <div className="flex flex-wrap gap-2 mb-8">
                     <span className="flex items-center gap-1.5 px-4 py-1.5 bg-[#8B0000] text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-red-900/20">
                       <Briefcase size={14} />
-                      Associate Professor
+                      {currentTeacher.designation}
                     </span>
                     <span className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-200">
                       <GraduationCap size={14} />
-                      CSE Dept
+                      {currentTeacher.department} Dept
                     </span>
                   </div>
 
@@ -155,7 +170,7 @@ const Dashboard = () => {
                       <div className="absolute -inset-2 bg-red-100 rounded-[2.4rem] blur-xl opacity-40"></div>
                       <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-[2.2rem] bg-white p-1.5 shadow-2xl ring-1 ring-slate-100 overflow-hidden">
                         <img
-                          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200"
+                          src={currentTeacher.profileImage}
                           alt="Profile"
                           className="w-full h-full object-cover rounded-[1.8rem]"
                         />
@@ -163,10 +178,10 @@ const Dashboard = () => {
                     </div>
                     <div className="text-center sm:text-left">
                       <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">
-                        Good Morning, Robert Sir! 👋
+                        Good Morning, {currentTeacher.name.split(' ')[1]} Sir! 👋
                       </h1>
                       <p className="text-slate-500 text-lg font-medium">
-                        You have <span className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4">{activeClassesCount} classes</span> Now.
+                        You have <span onClick={() => navigate('/time-table')} className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4 cursor-pointer hover:decoration-[#8B0000] transition-all">{activeClassesCount} classes</span> Now.
                       </p>
                     </div>
                   </div>
@@ -178,28 +193,28 @@ const Dashboard = () => {
                 <InfoBlock
                   icon={<BookOpen />}
                   label="Total Courses"
-                  value="04"
+                  value={String(currentTeacher.totalCourses).padStart(2, '0')}
                   className="border-r border-b border-slate-100"
                   iconColor="text-blue-500"
                 />
                 <InfoBlock
                   icon={<Users />}
                   label="Students"
-                  value="142"
+                  value={String(currentTeacher.totalStudents)}
                   className="border-b border-slate-100"
                   iconColor="text-emerald-500"
                 />
                 <InfoBlock
                   icon={<MapPinned />}
                   label="Campus"
-                  value="Ettimadai Main"
+                  value={currentTeacher.campus}
                   className="border-r border-slate-100"
                   iconColor="text-red-500"
                 />
                 <InfoBlock
                   icon={<Building2 />}
                   label="Office Room"
-                  value="B, 402"
+                  value={currentTeacher.officeRoom}
                   iconColor="text-purple-500"
                 />
               </div>
@@ -224,12 +239,12 @@ const Dashboard = () => {
               </div>
 
               <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2 uppercase text-[10px] tracking-widest mb-6 opacity-60 text-left">
+                <h3 onClick={() => navigate('/announcements')} className="font-bold text-slate-800 flex items-center gap-2 uppercase text-[10px] tracking-widest mb-6 opacity-60 text-left cursor-pointer hover:opacity-100 transition-opacity">
                   <CalendarDays size={24} className="text-[#8B0000]" />
                   Agenda
                 </h3>
                 <div className="space-y-4">
-                  {notifications.map(notif => (
+                  {recentAnnouncements.map(notif => (
                     <div key={notif.id} className="flex gap-4 group cursor-pointer text-left">
                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${notif.color}`}>
                         {notif.type === 'event' ? <Users size={16} /> : <AlertCircle size={16} />}
@@ -249,7 +264,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* ===================== TEACHING SCHEDULE (RIGHT) ===================== */}
             <section className="lg:col-span-3 bg-white p-6 md:p-10 rounded-[3rem] border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-4 mb-10 text-left">
+              <div onClick={() => navigate('/time-table')} className="flex items-center gap-4 mb-10 text-left cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shrink-0">
                   <CalendarIcon size={24} />
                 </div>

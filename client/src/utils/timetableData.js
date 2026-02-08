@@ -1,12 +1,28 @@
-import { INITIAL_EVENTS } from "./constants";
+import { INITIAL_EVENTS, DAYS, SLOTS } from "./constants";
 
-// Deep clone of INITIAL_EVENTS with stable ids added
+/**
+ * Class Status System:
+ * - 'scheduled': Default state for planned classes (not yet taught)
+ * - 'completed': Class has been successfully conducted (counts in reports)
+ * - 'cancelled': Class was cancelled (excluded from reports)
+ * 
+ * Important: Reports only count 'completed' classes for accurate tracking
+ * of syllabus progress, attendance, and workload metrics.
+ * 
+ * Automatic Completion:
+ * Classes are automatically marked as 'completed' when their time slot ends.
+ * This happens through periodic checks every minute.
+ */
+
+// Deep clone of INITIAL_EVENTS with stable ids and default status added
 export const getInitialTimetable = () => {
   const result = {};
   Object.entries(INITIAL_EVENTS).forEach(([day, list]) => {
     result[day] = (list || []).map((e, index) => ({
       // preserve existing id if present, otherwise generate
       id: e.id || `${day}-${e.slotId}-${index}`,
+      // add default status if not present
+      status: e.status || 'scheduled',
       ...e,
     }));
   });
@@ -59,7 +75,24 @@ export const addClassToTimetable = (events, day, newEvent) => {
     };
   }
 
-  const updatedDayEvents = [...(events[day] || []), newEvent];
+  // Add default status to new event
+  const eventWithStatus = { ...newEvent, status: newEvent.status || 'scheduled' };
+  const updatedDayEvents = [...(events[day] || []), eventWithStatus];
+  return {
+    events: {
+      ...events,
+      [day]: updatedDayEvents,
+    },
+    error: null,
+  };
+};
+
+// Mark a class as completed
+export const markClassAsCompleted = (events, day, id) => {
+  const updatedDayEvents = (events[day] || []).map((e) =>
+    e.id === id ? { ...e, status: 'completed', isCancelled: false } : e
+  );
+
   return {
     events: {
       ...events,
@@ -70,9 +103,9 @@ export const addClassToTimetable = (events, day, newEvent) => {
 };
 
 // Mark a class as cancelled (does not remove it)
-export const cancelClassInTimetable = (events, day, id, scope = "Today") => {
+export const markClassAsCancelled = (events, day, id, scope = "Today") => {
   const updatedDayEvents = (events[day] || []).map((e) =>
-    e.id === id ? { ...e, isCancelled: true, cancelScope: scope } : e
+    e.id === id ? { ...e, status: 'cancelled', isCancelled: true, cancelScope: scope } : e
   );
 
   return {
@@ -84,10 +117,10 @@ export const cancelClassInTimetable = (events, day, id, scope = "Today") => {
   };
 };
 
-// Restore a previously cancelled class
-export const restoreClassInTimetable = (events, day, id) => {
+// Restore a class to scheduled state
+export const markClassAsScheduled = (events, day, id) => {
   const updatedDayEvents = (events[day] || []).map((e) =>
-    e.id === id ? { ...e, isCancelled: false, cancelScope: null } : e
+    e.id === id ? { ...e, status: 'scheduled', isCancelled: false, cancelScope: null } : e
   );
 
   return {
@@ -98,6 +131,12 @@ export const restoreClassInTimetable = (events, day, id) => {
     error: null,
   };
 };
+
+// Legacy function - use markClassAsCancelled instead
+export const cancelClassInTimetable = markClassAsCancelled;
+
+// Legacy function - use markClassAsScheduled instead
+export const restoreClassInTimetable = markClassAsScheduled;
 
 // Shift a class to a new day/slot (and optionally new room)
 export const shiftClassInTimetable = (
@@ -138,6 +177,7 @@ export const shiftClassInTimetable = (
     slotId: newSlotId,
     room: targetRoom,
     scope,
+    status: 'scheduled',
     isCancelled: false,
   };
   targetEvents.push(updatedEvent);
@@ -150,4 +190,67 @@ export const shiftClassInTimetable = (
     },
     error: null,
   };
+};
+
+/**
+ * Check if a specific day and slot time has passed
+ * @param {string} day - Day name (Monday, Tuesday, etc.)
+ * @param {number|string} slotId - Slot ID from SLOTS
+ * @param {Date} currentTime - Current date/time
+ * @returns {boolean} - True if the class time has ended
+ */
+export const hasClassTimePassed = (day, slotId, currentTime = new Date()) => {
+  // Get current day index (0 = Sunday, 1 = Monday, etc.)
+  const currentDayIndex = currentTime.getDay();
+  const currentDayName = DAYS[currentDayIndex - 1] || (currentDayIndex === 6 ? "Saturday" : null);
+  
+  // Find the day index for the class
+  const classDayIndex = DAYS.indexOf(day);
+  if (classDayIndex === -1) return false;
+  
+  // Find the slot
+  const slot = SLOTS.find(s => s.id === slotId);
+  if (!slot || slot.isBreak) return false;
+  
+  // If class is on a future day this week, it hasn't happened
+  if (classDayIndex > DAYS.indexOf(currentDayName)) return false;
+  
+  // If class is on a past day this week, it has happened
+  if (classDayIndex < DAYS.indexOf(currentDayName)) return true;
+  
+  // Same day - check time
+  const [endHour, endMinute] = slot.end.split(':').map(Number);
+  const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+  const slotEndMinutes = endHour * 60 + endMinute;
+  
+  return currentMinutes >= slotEndMinutes;
+};
+
+/**
+ * Automatically mark scheduled classes as completed if their time has passed
+ * @param {Object} events - Timetable events object
+ * @param {Date} currentTime - Current date/time
+ * @returns {Object} - Updated events object
+ */
+export const autoMarkCompletedClasses = (events, currentTime = new Date()) => {
+  const updatedEvents = { ...events };
+  let hasChanges = false;
+  
+  Object.keys(updatedEvents).forEach(day => {
+    const dayEvents = updatedEvents[day] || [];
+    const updatedDayEvents = dayEvents.map(event => {
+      // Only auto-complete scheduled classes (not cancelled or already completed)
+      if (event.status === 'scheduled' && hasClassTimePassed(day, event.slotId, currentTime)) {
+        hasChanges = true;
+        return { ...event, status: 'completed' };
+      }
+      return event;
+    });
+    
+    if (hasChanges) {
+      updatedEvents[day] = updatedDayEvents;
+    }
+  });
+  
+  return hasChanges ? updatedEvents : events;
 };

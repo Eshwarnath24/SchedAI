@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { 
   Search, 
   Filter,
@@ -12,12 +12,13 @@ import {
   Users,
   Image,
   FileText,
-  Link
+  Link,
+  Menu
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import AnnouncementModal from '../components/AnnouncementModal';
+import { AppContext } from '../context/AppContext';
 import { 
-  announcements, 
   filterTypes,
   getTypeIconName,
   getTypeColor,
@@ -28,6 +29,7 @@ import {
 } from '../utils/announcements';
 
 const Announcements = () => {
+  const { announcementsList } = useContext(AppContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -60,7 +62,7 @@ const Announcements = () => {
     return IconComponent ? <IconComponent className="w-4 h-4" /> : null;
   };
 
-  const filteredAnnouncements = announcements.filter(announcement => {
+  const filteredAnnouncements = announcementsList.filter(announcement => {
     const matchesSearch = announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          announcement.content.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || announcement.type === filterType;
@@ -101,7 +103,7 @@ const Announcements = () => {
             <span className="font-bold text-slate-800">Amrita</span>
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-            <span>Menu</span>
+            <Menu size={24} />
           </button>
         </header>
 
@@ -240,7 +242,7 @@ const Announcements = () => {
               {statsConfig.map((stat) => (
                 <div key={stat.type}>
                   <div className={`text-3xl font-black ${stat.color} mb-2`}>
-                    {announcements.filter(a => a.type === stat.type).length}
+                    {announcementsList.filter(a => a.type === stat.type).length}
                   </div>
                   <div className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     {stat.label}

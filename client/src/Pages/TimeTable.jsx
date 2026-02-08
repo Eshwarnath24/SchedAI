@@ -9,8 +9,8 @@ import { DAYS, SLOTS } from "../utils/constants";
 import { AppContext } from "../context/AppContext";
 import {
   addClassToTimetable,
-  cancelClassInTimetable,
-  restoreClassInTimetable,
+  markClassAsCancelled,
+  markClassAsScheduled,
   shiftClassInTimetable,
 } from "../utils/timetableData";
 
@@ -41,7 +41,14 @@ export default function TimetablePage() {
   };
 
   const getTypeStyles = (event) => {
-    if (event.isCancelled) return "bg-slate-50 text-slate-300 border-slate-100 grayscale cursor-pointer";
+    // Status-based styling
+    if (event.status === 'cancelled' || event.isCancelled) {
+      return "bg-slate-50 text-slate-300 border-slate-100 grayscale cursor-pointer";
+    }
+    if (event.status === 'completed') {
+      return "bg-green-50 text-green-800 border-green-200 cursor-pointer";
+    }
+    // Default scheduled classes - type-based styling
     switch (event.type) {
       case "Lab": return "bg-blue-50 text-blue-800 border-blue-200 cursor-pointer";
       case "Review": return "bg-indigo-50 text-indigo-800 border-indigo-200 cursor-pointer";
@@ -62,13 +69,13 @@ export default function TimetablePage() {
     setAddModal({ isOpen: false, day: null, slotId: null });
   };
 
-  const handleDeleteEvent = (id, day, scope) => {
-    setEvents((prev) => cancelClassInTimetable(prev, day, id, scope).events);
+  const handleMarkCancelled = (id, day, scope) => {
+    setEvents((prev) => markClassAsCancelled(prev, day, id, scope).events);
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
   };
 
-  const handleRestoreEvent = (id, day) => {
-    setEvents((prev) => restoreClassInTimetable(prev, day, id).events);
+  const handleMarkScheduled = (id, day) => {
+    setEvents((prev) => markClassAsScheduled(prev, day, id).events);
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
   };
 
@@ -87,7 +94,13 @@ export default function TimetablePage() {
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
       <AddEventModal {...addModal} onClose={() => setAddModal({ ...addModal, isOpen: false })} onSubmit={handleSaveEvent} />
-      <EditEventModal {...editModal} onClose={() => setEditModal({ ...editModal, isOpen: false })} onUpdate={handleShiftEvent} onDelete={handleDeleteEvent} onRestore={handleRestoreEvent} />
+      <EditEventModal 
+        {...editModal} 
+        onClose={() => setEditModal({ ...editModal, isOpen: false })} 
+        onUpdate={handleShiftEvent} 
+        onMarkCancelled={handleMarkCancelled}
+        onMarkScheduled={handleMarkScheduled}
+      />
 
       <aside className={`
         fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
@@ -140,8 +153,9 @@ export default function TimetablePage() {
                               <div className="w-full h-full flex p-1">
                                 {event ? (
                                   <div onClick={() => setEditModal({ isOpen: true, event, day, slotId: slot.id })} className={`flex-1 p-2 rounded-2xl border flex flex-col items-center justify-center transition-all hover:scale-[1.03] shadow-sm relative overflow-hidden ${getTypeStyles(event)}`}>
-                                    {event.isCancelled && <div className="absolute top-0 right-0 p-1.5"><Trash2 size={10} className="text-red-300"/></div>}
-                                    <div className={`text-xs font-black leading-tight ${event.isCancelled ? 'line-through opacity-40' : 'opacity-90'}`}>{event.code}</div>
+                                    {(event.status === 'cancelled' || event.isCancelled) && <div className="absolute top-0 right-0 p-1.5"><Trash2 size={10} className="text-red-300"/></div>}
+                                    {event.status === 'completed' && <div className="absolute top-0 right-0 p-1.5 bg-green-500 rounded-bl-lg"><div className="text-white text-[8px] font-black">✓</div></div>}
+                                    <div className={`text-xs font-black leading-tight ${(event.status === 'cancelled' || event.isCancelled) ? 'line-through opacity-40' : 'opacity-90'}`}>{event.code}</div>
                                     <div className="text-[11px] font-bold hidden md:block opacity-60 truncate max-w-full px-1">{event.title}</div>
                                     <div className="text-[10px] md:text-xs font-bold mt-1 opacity-80 bg-white/40 px-2 py-0.5 rounded-full">{event.room}</div>
                                   </div>

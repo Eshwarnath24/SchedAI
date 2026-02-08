@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { 
-  Share2, Download, Clock, BookOpen, Users, Award, Menu, X
+  Share2, Download, Clock, BookOpen, Users, Award, Menu, X, RefreshCw
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import ReportKPICard from '../components/ReportKPICard';
@@ -8,38 +8,73 @@ import ReportLoadingScreen from '../components/ReportLoadingScreen';
 import EngagementCurveChart from '../components/EngagementCurveChart';
 import EfficiencyGauge from '../components/EfficiencyGauge';
 import AcademicInventoryTable from '../components/AcademicInventoryTable';
+import { AppContext } from '../context/AppContext';
 import { 
   generateTeacherWorkloadReport, 
   calculateReportMetrics,
   generateChartTimeline,
-  getTodayXCoordinate
+  getTodayXCoordinate,
+  generateEngagementData,
+  generateSVGPath
 } from '../utils/generateReports';
-import { reportData } from '../utils/reportData';
-
-const FACULTY_NAME = "Dr. Robert Fox";
-const FACULTY_DEPT = "CSE";
+import { generateDynamicReportData } from '../utils/reportData';
 
 const Reports = () => {
+  const { events, currentTeacher } = useContext(AppContext);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentDate] = useState(new Date("2026-02-05T19:35:00"));
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [activeReport, setActiveReport] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Update current date/time every minute
+  useEffect(() => {
+    const dateInterval = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(dateInterval);
+  }, []);
 
   // Initialize report data
   useEffect(() => {
     const timer = setTimeout(() => {
-      const allReports = generateTeacherWorkloadReport(reportData);
+      const dynamicData = generateDynamicReportData(events, currentTeacher);
+      const allReports = generateTeacherWorkloadReport(dynamicData);
       const myReport = allReports[0]; // Get first teacher's report
-      // Override with faculty name
-      if (myReport) {
-        myReport.name = FACULTY_NAME;
-        myReport.dept = FACULTY_DEPT;
-      }
       setActiveReport(myReport);
       setLoading(false);
     }, 2500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [events, currentTeacher]);
+
+  // Auto-refresh report data every 5 minutes
+  useEffect(() => {
+    if (!loading) {
+      const refreshInterval = setInterval(() => {
+        const dynamicData = generateDynamicReportData(events, currentTeacher);
+        const allReports = generateTeacherWorkloadReport(dynamicData);
+        const myReport = allReports[0];
+        setActiveReport(myReport);
+      }, 300000); // Refresh every 5 minutes
+
+      return () => clearInterval(refreshInterval);
+    }
+  }, [loading, events, currentTeacher]);
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setCurrentDate(new Date());
+    
+    setTimeout(() => {
+      const dynamicData = generateDynamicReportData(events, currentTeacher);
+      const allReports = generateTeacherWorkloadReport(dynamicData);
+      const myReport = allReports[0];
+      setActiveReport(myReport);
+      setIsRefreshing(false);
+    }, 800);
+  };
 
   // Calculate metrics
   const reportMetrics = useMemo(() => {
@@ -55,6 +90,37 @@ const Reports = () => {
   const todayXCoordinate = useMemo(() => {
     return getTodayXCoordinate(chartTimeline);
   }, [chartTimeline]);
+
+  // Generate engagement data points for chart
+  const engagementData = useMemo(() => {
+    return generateEngagementData(chartTimeline, activeReport);
+  }, [chartTimeline, activeReport]);
+
+  // Generate SVG paths for actual and predicted data
+  const { actualPath, predictedPath, todayPoint } = useMemo(() => {
+    if (!engagementData || engagementData.length === 0) {
+      return { actualPath: '', predictedPath: '', todayPoint: null };
+    }
+    
+    const todayIndex = engagementData.findIndex(d => d.isToday);
+    
+    if (todayIndex === -1) {
+      return {
+        actualPath: generateSVGPath(engagementData),
+        predictedPath: '',
+        todayPoint: null
+      };
+    }
+    
+    const actualData = engagementData.slice(0, todayIndex + 1);
+    const predictedData = engagementData.slice(todayIndex);
+    
+    return {
+      actualPath: generateSVGPath(actualData),
+      predictedPath: generateSVGPath(predictedData),
+      todayPoint: engagementData[todayIndex]
+    };
+  }, [engagementData]);
 
   if (loading) {
     return (
@@ -104,18 +170,18 @@ const Reports = () => {
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 lg:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-40 w-72 transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
         <Sidebar onClose={() => setIsSidebarOpen(false)} />
-      </aside>
+      </aside>  
 
       <main className="flex-1 overflow-y-auto w-full relative">
         {/* Mobile Header */}
@@ -137,7 +203,7 @@ const Reports = () => {
             <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 p-1 shadow-sm">
               <img 
                 className="w-full h-full rounded-xl object-cover" 
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200" 
+                src={currentTeacher?.profileImage || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200"} 
                 alt="Faculty Avatar" 
               />
             </div>
@@ -151,10 +217,10 @@ const Reports = () => {
                 </span>
               </div>
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-                {FACULTY_NAME}
+                {currentTeacher?.name || 'Faculty Member'}
               </h1>
               <p className="text-slate-500 font-medium flex items-center gap-2 mt-1">
-                Associate Professor • Dept. of {FACULTY_DEPT}
+                {currentTeacher?.designation || 'Associate Professor'} • Dept. of {currentTeacher?.department || 'CSE'}
               </p>
             </div>
           </div>
@@ -166,7 +232,17 @@ const Reports = () => {
               <p className="text-sm font-black text-slate-600">
                 {reportMetrics.day} {reportMetrics.month}
               </p>
+              <p className="text-[9px] font-medium text-slate-400 mt-0.5">
+                {currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 bg-white text-slate-600 border border-slate-200 px-5 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
             <button className="flex items-center gap-2 bg-white text-slate-600 border border-slate-200 px-5 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm">
               <Share2 size={18} />
             </button>
@@ -215,6 +291,10 @@ const Reports = () => {
             chartTimeline={chartTimeline}
             todayXCoordinate={todayXCoordinate}
             reportMetrics={reportMetrics}
+            engagementData={engagementData}
+            actualPath={actualPath}
+            predictedPath={predictedPath}
+            todayPoint={todayPoint}
           />
           <EfficiencyGauge reportMetrics={reportMetrics} />
         </div>

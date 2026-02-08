@@ -1,23 +1,124 @@
-// Consolidated Data Layer for Teacher Workload Reports
-export const reportData = {
-    teachers: [
-        { facultyId: "FAC-12", name: "Dr. Omer Erdogan", maxWeeklyHours: 20, dept: "CSE" },
-        { facultyId: "FAC-05", name: "Prof. Sarah Jenkins", maxWeeklyHours: 18, dept: "CSE" }
-    ],
-    timetable: [
-        { classId: "C1", facultyId: "FAC-12", course: "Data Structures", type: "Theory", date: "2026-02-05", section: "A" },
-        { classId: "C2", facultyId: "FAC-12", course: "Algorithms Lab", type: "Lab", date: "2026-02-05", slotRange: [1, 2, 3], section: "B" },
-        { classId: "C3", facultyId: "FAC-12", course: "Data Structures", type: "Theory", date: "2026-02-04", section: "A" },
-        { classId: "C4", facultyId: "FAC-05", course: "Software Engineering", type: "Theory", date: "2026-02-05", section: "C" }
-    ],
-    leaves: [
-        { facultyId: "FAC-05", date: "2026-02-05", reason: "Medical" }
-    ],
-    cancelledClasses: [],
-    extraClasses: [
-        { facultyId: "FAC-12", course: "Special Seminar", date: "2026-07" }
-    ],
-    substitutions: [
-        { classId: "C4", date: "2026-02-05", substituteFaculty: "FAC-12" } 
-    ]
-};
+import { CURRENT_TEACHER } from './database';
+import { DAYS, SLOTS } from './constants';
+
+/**
+ * Generate dynamic report data from current teacher and timetable
+ * @param {Object} events - Timetable events from AppContext
+ * @param {Object} teacher - Current teacher object from database
+ * @returns {Object} - Report data in the format expected by generateTeacherWorkloadReport
+ */
+export function generateDynamicReportData(events, teacher = CURRENT_TEACHER) {
+    if (!teacher || !events) {
+        console.log('⚠️ No teacher or events data available');
+        return getDefaultReportData();
+    }
+
+    // Get all classes for the current teacher from the week
+    const timetableEntries = [];
+    let classIdCounter = 1;
+
+    DAYS.forEach(day => {
+        const dayEvents = events[day] || [];
+        dayEvents.forEach(event => {
+            // Only include completed classes for report generation
+            // Reports show actual teaching done, not planned workload
+            if (event.status === 'completed') {
+                // Calculate slot duration for labs
+                let slotRange = [event.slotId];
+                if (event.type === 'Lab' && typeof event.slotId === 'number') {
+                    // Labs typically span 2-3 consecutive slots
+                    // Find the next non-break slot
+                    const currentSlotIndex = SLOTS.findIndex(s => s.id === event.slotId);
+                    if (currentSlotIndex !== -1 && currentSlotIndex < SLOTS.length - 1) {
+                        const nextSlot = SLOTS[currentSlotIndex + 1];
+                        // Only add if next slot is not a break
+                        if (!nextSlot.isBreak && typeof nextSlot.id === 'number') {
+                            slotRange.push(nextSlot.id);
+                        }
+                    }
+                }
+
+                timetableEntries.push({
+                    classId: `C${classIdCounter++}`,
+                    facultyId: teacher.id,
+                    course: event.title,
+                    type: event.type || 'Theory',
+                    date: formatDateForReport(day),
+                    slotRange: event.type === 'Lab' ? slotRange : undefined,
+                    section: event.section || 'A',
+                    studentCount: event.studentCount || 0
+                });
+            }
+        });
+    });
+
+    console.log(`📊 Generated ${timetableEntries.length} timetable entries for ${teacher.name}`);
+    console.log('Teacher ID:', teacher.id);
+    console.log('Sample entries:', timetableEntries.slice(0, 2));
+
+    return {
+        teachers: [
+            {
+                facultyId: teacher.id,
+                name: teacher.name,
+                maxWeeklyHours: 20, // Standard weekly limit
+                dept: teacher.department
+            }
+        ],
+        timetable: timetableEntries,
+        leaves: [],
+        cancelledClasses: [],
+        extraClasses: [],
+        substitutions: []
+    };
+}
+
+/**
+ * Format day name to date string for report
+ */
+function formatDateForReport(dayName) {
+    const today = new Date();
+    const currentDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const dayMap = {
+        'Monday': 1,
+        'Tuesday': 2,
+        'Wednesday': 3,
+        'Thursday': 4,
+        'Friday': 5,
+        'Saturday': 6,
+        'Sunday': 0
+    };
+    
+    const targetDayIndex = dayMap[dayName];
+    const daysOffset = targetDayIndex - currentDayIndex;
+    
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + daysOffset);
+    
+    return targetDate.toISOString().split('T')[0];
+}
+
+/**
+ * Get default report data if dynamic generation fails
+ */
+function getDefaultReportData() {
+    return {
+        teachers: [
+            { 
+                facultyId: "FAC-12", 
+                name: "Dr. Robert Johnson", 
+                maxWeeklyHours: 20, 
+                dept: "CSE" 
+            }
+        ],
+        timetable: [],
+        leaves: [],
+        cancelledClasses: [],
+        extraClasses: [],
+        substitutions: []
+    };
+}
+
+// Export for backward compatibility
+export const reportData = getDefaultReportData();
+
