@@ -1,5 +1,6 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AppContext } from '../context/AppContext';
 import { 
   LayoutDashboard, 
   Calendar as CalendarIcon, 
@@ -14,7 +15,15 @@ import {
 
 const Sidebar = ({ onClose }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useContext(AppContext);
   const activeTab = location.pathname.slice(1) || 'dashboard'; // Remove leading slash, default to dashboard
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+    if (onClose) onClose();
+  };
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-slate-100 shadow-xl lg:shadow-none">
@@ -60,7 +69,7 @@ const Sidebar = ({ onClose }) => {
             <span className="text-[10px] text-slate-500 font-medium uppercase truncate">Associate Professor</span>
           </div>
         </div>
-        <button className="w-full flex items-center justify-center gap-2 py-3 px-4 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-colors">
+        <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-colors">
           <LogOut size={18} /> Sign Out
         </button>
       </div>

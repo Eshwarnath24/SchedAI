@@ -10,6 +10,8 @@ export const AppContextProvider = (props) => {
     const [events, setEvents] = useState(getInitialTimetable);
     const [announcementsList, setAnnouncementsList] = useState(announcements);
     const [currentTeacher, setCurrentTeacher] = useState(CURRENT_TEACHER);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [userRole, setUserRole] = useState('');
 
     // Automatically mark classes as completed when their time passes
     useEffect(() => {
@@ -30,6 +32,18 @@ export const AppContextProvider = (props) => {
         return () => clearInterval(interval);
     }, []);
 
+    const login = (email, password, role) => {
+        // Add authentication logic here
+        setIsAuthenticated(true);
+        setUserRole(role);
+        return true;
+    };
+
+    const logout = () => {
+        setIsAuthenticated(false);
+        setUserRole('');
+    };
+
     const value = {
         events,
         setEvents,
@@ -37,6 +51,10 @@ export const AppContextProvider = (props) => {
         setAnnouncementsList,
         currentTeacher,
         setCurrentTeacher,
+        isAuthenticated,
+        userRole,
+        login,
+        logout,
     };
 
     return (
