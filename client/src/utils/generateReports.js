@@ -157,12 +157,15 @@ export function generateChartTimeline(currentDate) {
     while (pastCount < 5) {
         tempDate.setDate(tempDate.getDate() - 1);
         if (tempDate.getDay() !== 0) { // Skip Sundays
+            const dateObj = new Date(tempDate);
             pastDates.unshift({
-                day: tempDate.getDate(),
+                day: dateObj.getDate(),
+                dayName: dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
                 isToday: false,
                 isPast: true,
                 isFuture: false,
-                label: `${tempDate.toLocaleString('default', { month: 'short' })} ${tempDate.getDate()}`
+                date: dateObj,
+                label: `${dateObj.toLocaleString('default', { month: 'short' })} ${dateObj.getDate()}`
             });
             pastCount++;
         }
@@ -172,9 +175,11 @@ export function generateChartTimeline(currentDate) {
     dates.push(...pastDates);
     dates.push({
         day: currentDate.getDate(),
+        dayName: currentDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
         isToday: true,
         isPast: false,
         isFuture: false,
+        date: new Date(currentDate),
         label: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`
     });
     
@@ -184,12 +189,15 @@ export function generateChartTimeline(currentDate) {
     while (futureCount < 2) {
         tempDate.setDate(tempDate.getDate() + 1);
         if (tempDate.getDay() !== 0) {
+            const dateObj = new Date(tempDate);
             dates.push({
-                day: tempDate.getDate(),
+                day: dateObj.getDate(),
+                dayName: dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
                 isToday: false,
                 isPast: false,
                 isFuture: true,
-                label: `${tempDate.toLocaleString('default', { month: 'short' })} ${tempDate.getDate()}`
+                date: dateObj,
+                label: `${dateObj.toLocaleString('default', { month: 'short' })} ${dateObj.getDate()}`
             });
             futureCount++;
         }

@@ -15,9 +15,9 @@ import {
   Link,
   Menu
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import AnnouncementModal from '../components/AnnouncementModal';
-import { AppContext } from '../context/AppContext';
+import Sidebar from '../../components/Sidebar';
+import AnnouncementModal from '../../components/AnnouncementModal';
+import { AppContext } from '../../context/AppContext';
 import { 
   filterTypes,
   getTypeIconName,
@@ -26,7 +26,7 @@ import {
   getPriorityColor,
   statsConfig,
   formatDate
-} from '../utils/announcements';
+} from '../../utils/announcements';
 
 const Announcements = () => {
   const { announcementsList } = useContext(AppContext);

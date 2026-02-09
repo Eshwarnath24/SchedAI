@@ -24,10 +24,10 @@ import {
   Briefcase,
   GraduationCap
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import InfoBlock from '../components/InfoBlock';
-import { SLOTS } from '../utils/constants';
-import { AppContext } from '../context/AppContext';
+import Sidebar from '../../components/Sidebar';
+import InfoBlock from '../../components/InfoBlock';
+import { SLOTS } from '../../utils/constants';
+import { AppContext } from '../../context/AppContext';
 
 const Dashboard = () => {
   const { events, currentTeacher, announcementsList } = useContext(AppContext);

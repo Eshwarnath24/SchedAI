@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingUp, Zap } from 'lucide-react';
 
-const EngagementCurveChart = ({ chartTimeline, todayXCoordinate, reportMetrics, engagementData, actualPath, predictedPath, todayPoint }) => {
+const EngagementCurveChart = ({ chartTimeline, reportMetrics, engagementData, actualPath, predictedPath, todayPoint }) => {
     const [hoveredPoint, setHoveredPoint] = useState(null);
     // Generate gradient fill path for area under curve (only for actual data)
     const generateAreaPath = () => {
@@ -94,33 +94,19 @@ const EngagementCurveChart = ({ chartTimeline, todayXCoordinate, reportMetrics, 
                     
                     {/* Data points - dots for all points */}
                     {engagementData && engagementData.map((point, idx) => (
-                        <g key={`point-group-${idx}`}>
-                            <circle 
-                                cx={point.x} 
-                                cy={point.y} 
-                                r={point.isToday ? "10" : "5"} 
-                                fill={point.isToday ? "#8B0000" : point.isFuture ? "#8B000080" : "#8B0000"}
-                                stroke={point.isToday ? "#FFD700" : "white"}
-                                strokeWidth={point.isToday ? "4" : "2"}
-                                className={`transition-all cursor-pointer ${point.isToday ? 'drop-shadow-[0_4px_8px_rgba(139,0,0,0.6)]' : 'hover:r-6'}`}
-                                onMouseEnter={() => setHoveredPoint(point)}
-                                onMouseLeave={() => setHoveredPoint(null)}
-                                style={{ filter: point.isToday ? 'drop-shadow(0 0 8px rgba(139, 0, 0, 0.8))' : 'none' }}
-                            />
-                            {/* Pulse animation ring for today */}
-                            {point.isToday && (
-                                <circle 
-                                    cx={point.x} 
-                                    cy={point.y} 
-                                    r="10" 
-                                    fill="none"
-                                    stroke="#8B0000"
-                                    strokeWidth="2"
-                                    opacity="0.3"
-                                    className="animate-ping"
-                                />
-                            )}
-                        </g>
+                        <circle 
+                            key={`point-${idx}`}
+                            cx={point.x} 
+                            cy={point.y} 
+                            r={point.isToday ? "10" : "5"} 
+                            fill={point.isToday ? "#8B0000" : point.isFuture ? "#8B000080" : "#8B0000"}
+                            stroke={point.isToday ? "#FFD700" : "white"}
+                            strokeWidth={point.isToday ? "4" : "2"}
+                            className="transition-all cursor-pointer"
+                            onMouseEnter={() => setHoveredPoint(point)}
+                            onMouseLeave={() => setHoveredPoint(null)}
+                            style={{ filter: point.isToday ? 'drop-shadow(0 0 8px rgba(139, 0, 0, 0.8))' : 'none' }}
+                        />
                     ))}
                 </svg>
                 
@@ -189,7 +175,7 @@ const EngagementCurveChart = ({ chartTimeline, todayXCoordinate, reportMetrics, 
                                 ? 'text-[#8B0000] scale-110' 
                                 : 'text-slate-300'
                         }`}>
-                            {item.day}
+                            {item.dayName}
                         </span>
                         {item.isToday && (
                             <div className="w-1.5 h-1.5 rounded-full bg-[#8B0000] mt-1"></div>

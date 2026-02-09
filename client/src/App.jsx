@@ -1,12 +1,12 @@
 import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Dashboard from "./Pages/Dashboard";
-import TimeTable from "./Pages/TimeTable";
-import Workload from "./Pages/Workload";
-import LeaveForm from "./Pages/LeaveForm";
-import Allocations from "./Pages/Allocations";
-import Announcements from "./Pages/Announcements";
-import Reports from "./Pages/Reports";
+import Dashboard from "./Pages/Faculty/Dashboard";
+import TimeTable from "./Pages/Faculty/TimeTable";
+import Workload from "./Pages/Faculty/Workload";
+import LeaveForm from "./Pages/Faculty/LeaveForm";
+import Allocations from "./Pages/Faculty/Allocations";
+import Announcements from "./Pages/Faculty/Announcements";
+import Reports from "./Pages/Faculty/Reports";
 import AuthPage from "./Pages/AuthPage";
 import { AppContext } from "./context/AppContext";
 

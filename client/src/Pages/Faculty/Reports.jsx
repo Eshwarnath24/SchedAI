@@ -2,22 +2,21 @@ import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { 
   Share2, Download, Clock, BookOpen, Users, Award, Menu, X, RefreshCw
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import ReportKPICard from '../components/ReportKPICard';
-import ReportLoadingScreen from '../components/ReportLoadingScreen';
-import EngagementCurveChart from '../components/EngagementCurveChart';
-import EfficiencyGauge from '../components/EfficiencyGauge';
-import AcademicInventoryTable from '../components/AcademicInventoryTable';
-import { AppContext } from '../context/AppContext';
+import Sidebar from '../../components/Sidebar';
+import ReportKPICard from '../../components/ReportKPICard';
+import ReportLoadingScreen from '../../components/ReportLoadingScreen';
+import EngagementCurveChart from '../../components/EngagementCurveChart';
+import EfficiencyGauge from '../../components/EfficiencyGauge';
+import AcademicInventoryTable from '../../components/AcademicInventoryTable';
+import { AppContext } from '../../context/AppContext';
 import { 
   generateTeacherWorkloadReport, 
   calculateReportMetrics,
   generateChartTimeline,
-  getTodayXCoordinate,
   generateEngagementData,
   generateSVGPath
-} from '../utils/generateReports';
-import { generateDynamicReportData } from '../utils/reportData';
+} from '../../utils/generateReports';
+import { generateDynamicReportData } from '../../utils/reportData';
 
 const Reports = () => {
   const { events, currentTeacher } = useContext(AppContext);
@@ -85,11 +84,6 @@ const Reports = () => {
   const chartTimeline = useMemo(() => {
     return generateChartTimeline(currentDate);
   }, [currentDate]);
-
-  // Calculate today's position on chart
-  const todayXCoordinate = useMemo(() => {
-    return getTodayXCoordinate(chartTimeline);
-  }, [chartTimeline]);
 
   // Generate engagement data points for chart
   const engagementData = useMemo(() => {
@@ -289,7 +283,6 @@ const Reports = () => {
         <div className="flex flex-col xl:flex-row gap-10 items-start">
           <EngagementCurveChart 
             chartTimeline={chartTimeline}
-            todayXCoordinate={todayXCoordinate}
             reportMetrics={reportMetrics}
             engagementData={engagementData}
             actualPath={actualPath}

@@ -1,18 +1,18 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useContext } from "react";
 import { Menu, Plus, MapPin, Trash2 } from "lucide-react";
-import { AddEventModal } from "../components/AddEventModal";
-import { EditEventModal } from "../components/EditEventModal";
-import Sidebar from "../components/Sidebar";
-import TopToolbar from "../components/TopToolbar";
-import { DAYS, SLOTS } from "../utils/constants";
-import { AppContext } from "../context/AppContext";
+import { AddEventModal } from "../../components/AddEventModal";
+import { EditEventModal } from "../../components/EditEventModal";
+import Sidebar from "../../components/Sidebar";
+import TopToolbar from "../../components/TopToolbar";
+import { DAYS, SLOTS } from "../../utils/constants";
+import { AppContext } from "../../context/AppContext";
 import {
   addClassToTimetable,
   markClassAsCancelled,
   markClassAsScheduled,
   shiftClassInTimetable,
-} from "../utils/timetableData";
+} from "../../utils/timetableData";
 
 export default function TimetablePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

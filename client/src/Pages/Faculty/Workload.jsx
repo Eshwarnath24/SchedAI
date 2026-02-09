@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
-const LeaveForm = () => {
+const Workload = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -37,7 +37,7 @@ const LeaveForm = () => {
 
         <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-full">
-            <h1 className="text-4xl font-black text-slate-900">Leave Application Form</h1>
+            <h1 className="text-4xl font-black text-slate-900">Workload Management</h1>
           </div>
         </div>
       </main>
@@ -45,4 +45,4 @@ const LeaveForm = () => {
   );
 };
 
-export default LeaveForm;
+export default Workload;
