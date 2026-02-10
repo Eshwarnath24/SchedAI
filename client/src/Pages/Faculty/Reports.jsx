@@ -7,7 +7,6 @@ import ReportKPICard from '../../components/ReportKPICard';
 import ReportLoadingScreen from '../../components/ReportLoadingScreen';
 import EngagementCurveChart from '../../components/EngagementCurveChart';
 import EfficiencyGauge from '../../components/EfficiencyGauge';
-import AcademicInventoryTable from '../../components/AcademicInventoryTable';
 import { AppContext } from '../../context/AppContext';
 import { 
   generateTeacherWorkloadReport, 
@@ -119,9 +118,20 @@ const Reports = () => {
   if (loading) {
     return (
       <div className="flex h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-hidden">
-        {/* Sidebar always visible */}
-        <aside className="w-72">
-          <Sidebar onClose={() => {}} />
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside className={`
+          fixed lg:static inset-y-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out bg-white border-r border-slate-200
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}>
+          <Sidebar onClose={() => setIsSidebarOpen(false)} />
         </aside>
 
         <main className="flex-1 overflow-y-auto w-full relative">
@@ -291,9 +301,6 @@ const Reports = () => {
           />
           <EfficiencyGauge reportMetrics={reportMetrics} />
         </div>
-
-        {/* Academic Inventory */}
-        <AcademicInventoryTable subjects={activeReport?.subjects} />
         </div>
       </main>
     </div>

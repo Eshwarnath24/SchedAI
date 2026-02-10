@@ -2,6 +2,7 @@ import { createContext, useState, useEffect } from "react";
 import { getInitialTimetable, autoMarkCompletedClasses } from "../utils/timetableData";
 import { announcements } from "../utils/announcements";
 import { CURRENT_TEACHER } from "../utils/database";
+import { parseStudentRollNumber } from "../utils/rollNumber";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AppContext = createContext();
@@ -12,6 +13,8 @@ export const AppContextProvider = (props) => {
     const [currentTeacher, setCurrentTeacher] = useState(CURRENT_TEACHER);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userRole, setUserRole] = useState('');
+    const [studentRollNo, setStudentRollNo] = useState('');
+    const [studentProfile, setStudentProfile] = useState(null);
 
     // Automatically mark classes as completed when their time passes
     useEffect(() => {
@@ -32,16 +35,38 @@ export const AppContextProvider = (props) => {
         return () => clearInterval(interval);
     }, []);
 
-    const login = (email, password, role) => {
-        // Add authentication logic here
+    const login = (email, password, role, rollNo = '', studentDetails = null) => {
+        if (role === 'student') {
+            const parsedDetails = studentDetails || parseStudentRollNumber(rollNo);
+
+            if (!parsedDetails) {
+                return {
+                    success: false,
+                    error: 'Invalid student roll number format. Expected format similar to CB.SC.U4CSE23XXX.',
+                };
+            }
+
+            setIsAuthenticated(true);
+            setUserRole(role);
+            setStudentRollNo(parsedDetails.normalized);
+            setStudentProfile(parsedDetails);
+
+            return { success: true };
+        }
+
         setIsAuthenticated(true);
         setUserRole(role);
-        return true;
+        setStudentRollNo('');
+        setStudentProfile(null);
+
+        return { success: true };
     };
 
     const logout = () => {
         setIsAuthenticated(false);
         setUserRole('');
+        setStudentRollNo('');
+        setStudentProfile(null);
     };
 
     const value = {
@@ -55,6 +80,8 @@ export const AppContextProvider = (props) => {
         userRole,
         login,
         logout,
+        studentRollNo,
+        studentProfile,
     };
 
     return (

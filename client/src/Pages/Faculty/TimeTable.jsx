@@ -120,11 +120,11 @@ export default function TimetablePage() {
 
         <div className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="h-full bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-            <div className="h-full overflow-y-auto">
-              <table className="w-full table-fixed border-collapse">
+            <div className="h-full overflow-auto">
+              <table className={`w-full table-fixed border-collapse ${view === "week" ? "min-w-[1000px]" : ""}`}>
                 <thead className="sticky top-0 bg-slate-50 z-20">
                   <tr>
-                    <th className="w-20 md:w-32 p-4 text-left text-xs uppercase text-slate-400 font-black tracking-widest">Time</th>
+                    <th className="w-20 md:w-32 p-4 text-left text-xs uppercase text-slate-400 font-black tracking-widest sticky left-0 bg-slate-50 z-30">Time</th>
                     {view === "week" ? DAYS.map(day => (
                       <th key={day} className={`p-4 text-xs uppercase text-center font-black tracking-widest transition-colors ${day === todayName ? "text-[#8B0000] bg-red-50/50" : (day === activeDay ? "text-slate-900 underline decoration-[#8B0000] decoration-2" : "text-slate-400")}`}>
                         {day}
@@ -138,7 +138,7 @@ export default function TimetablePage() {
                 <tbody>
                   {SLOTS.map(slot => (
                     <tr key={slot.id} className="group">
-                      <td className="p-4 border-r border-slate-50 align-top bg-white">
+                      <td className="p-4 border-r border-slate-50 align-top bg-white sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                         <div className={`text-base md:text-lg font-black ${slot.isBreak ? "text-slate-200" : isSlotCurrent(slot) ? "text-[#8B0000]" : "text-slate-800"}`}>{slot.start}</div>
                         <div className="text-[10px] md:text-xs text-slate-400 font-bold uppercase mt-1 tracking-tighter">{slot.label}</div>
                       </td>
