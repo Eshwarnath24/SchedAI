@@ -11,7 +11,7 @@ const Room = require('../DB_models/Room');
 const Course = require('../DB_models/Course');
 const Section = require('../DB_models/Section');
 const TimeSlot = require('../DB_models/timeSlot');
-const Schedule = require('../DB_models/Schedule');
+const Schedule = require('../DB_models/schedule');
 
 // Connect to DB
 mongoose.connect("mongodb+srv://vishalRajaraman:Vishal%40123.@schedai.p21uk9p.mongodb.net/?appName=schedAI")
