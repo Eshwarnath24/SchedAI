@@ -115,7 +115,7 @@ const Announcements = () => {
           </div>
 
           {/* Search and Filter Bar */}
-          <div className="mb-8 bg-white rounded-[2.5rem] p-6 shadow-lg border border-slate-100">
+          <div className="mb-8 bg-white rounded-3xl md:rounded-[2.5rem] p-4 md:p-6 shadow-lg border border-slate-100">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative">
@@ -172,14 +172,14 @@ const Announcements = () => {
               filteredAnnouncements.map((announcement) => (
                 <div
                   key={announcement.id}
-                  className={`bg-white rounded-[2.5rem] p-8 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300 group ${
+                  className={`bg-white rounded-3xl md:rounded-[2.5rem] p-4 md:p-8 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-300 group ${
                     announcement.contentType !== 'text' ? 'cursor-pointer' : ''
                   }`}
                   onClick={() => handleAnnouncementClick(announcement)}
                 >
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-start gap-4 md:gap-6">
                     {/* Type Icon */}
-                    <div className={`p-4 rounded-2xl border-2 ${getTypeColor(announcement.type)}`}>
+                    <div className={`p-3 md:p-4 rounded-2xl border-2 ${getTypeColor(announcement.type)}`}>
                       {getTypeIcon(announcement.type)}
                     </div>
 
@@ -187,8 +187,8 @@ const Announcements = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-2xl font-black text-slate-900 group-hover:text-[#8B0000] transition-colors">
+                          <div className="flex items-center gap-2 md:gap-3 mb-2">
+                            <h3 className="text-lg md:text-2xl font-black text-slate-900 group-hover:text-[#8B0000] transition-colors">
                               {announcement.title}
                             </h3>
                             {announcement.contentType !== 'text' && (
@@ -237,8 +237,8 @@ const Announcements = () => {
           </div>
 
           {/* Stats Footer */}
-          <div className="mt-12 bg-white rounded-[2.5rem] p-8 shadow-lg border border-slate-100">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="mt-12 bg-white rounded-3xl md:rounded-[2.5rem] p-4 md:p-8 shadow-lg border border-slate-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
               {statsConfig.map((stat) => (
                 <div key={stat.type}>
                   <div className={`text-3xl font-black ${stat.color} mb-2`}>

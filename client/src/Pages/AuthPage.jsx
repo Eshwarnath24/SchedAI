@@ -9,18 +9,21 @@ import {
     Eye,
     Check,
     CheckCircle2,
-    X
+    X,
+    AlertTriangle
 } from 'lucide-react';
+import { parseStudentRollNumber, STUDENT_ROLL_FORMAT } from '../utils/rollNumber';
 
 const AuthPage = () => {
     const navigate = useNavigate();
     const { login } = useContext(AppContext);
     const [currentRole, setCurrentRole] = useState('student');
-    const [rollNo, setRollNo] = useState('');
+    const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState({ title: '', message: '' });
+    const [toastType, setToastType] = useState('success');
 
     const roleData = {
         student: {
@@ -35,6 +38,14 @@ const AuthPage = () => {
             quote: "Managing campus digital systems by ensuring security, reliability, and support that help the institution grow, adapt, and succeed smoothly.",
             icon: ShieldCheck
         }
+    };
+
+    const identifierLabel = currentRole === 'student' ? 'Roll Number' : 'Teacher ID';
+
+    const showToastNotification = (title, message, type = 'success') => {
+        setToastMessage({ title, message });
+        setToastType(type);
+        setShowToast(true);
     };
 
 
@@ -59,24 +70,49 @@ const AuthPage = () => {
     const handleLogin = (e) => {
         e.preventDefault();
 
-        // Construct full email from roll number
-        const fullEmail = `${rollNo}${getEmailDomain()}`;
+        const trimmedId = userId.trim();
+        if (!trimmedId) {
+            showToastNotification('Missing Details', `Please enter your ${identifierLabel}.`, 'error');
+            return;
+        }
 
-        // Call login function from context
-        login(fullEmail, password, currentRole);
+        if (!password.trim()) {
+            showToastNotification('Missing Password', 'Please enter your password.', 'error');
+            return;
+        }
 
-        // Show success toast
+        let normalizedIdentifier = trimmedId;
+        let studentDetails = null;
+
+        if (currentRole === 'student') {
+            const parsed = parseStudentRollNumber(trimmedId);
+            if (!parsed) {
+                showToastNotification('Invalid Roll Number', `Use format similar to ${STUDENT_ROLL_FORMAT}.`, 'error');
+                return;
+            }
+            normalizedIdentifier = parsed.normalized;
+            studentDetails = parsed;
+        }
+
+        const fullEmail = `${normalizedIdentifier}${getEmailDomain()}`;
+        const loginResult = login(fullEmail, password, currentRole, normalizedIdentifier, studentDetails);
+
+        if (!loginResult?.success) {
+            showToastNotification('Login Failed', loginResult?.error || 'Unable to login with the provided credentials.', 'error');
+            return;
+        }
+
         const roleCapitalized = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
-        setToastMessage({
-            title: 'Welcome Back!',
-            message: `Logged in successfully as ${roleCapitalized}`
-        });
-        setShowToast(true);
+        showToastNotification('Welcome Back!', `Logged in successfully as ${roleCapitalized}`);
 
         // Navigate to dashboard after a brief delay
         setTimeout(() => {
             setShowToast(false);
-            navigate('/dashboard');
+            if (currentRole === 'student') {
+                navigate('/student/dashboard');
+            } else {
+                navigate('/dashboard');
+            }
         }, 1500);
     };
 
@@ -85,6 +121,7 @@ const AuthPage = () => {
     };
 
     const RoleIcon = roleData[currentRole].icon;
+    const ToastIcon = toastType === 'error' ? AlertTriangle : CheckCircle2;
 
     return (
         <div className="min-h-screen w-full md:flex md:items-center md:justify-center bg-[#f0f2f5] p-0 md:p-4 text-gray-800" style={{
@@ -266,17 +303,17 @@ const AuthPage = () => {
                                             <div className="relative flex items-center">
                                                 <input
                                                     type="text"
-                                                    value={rollNo}
-                                                    onChange={(e) => setRollNo(e.target.value)}
+                                                    value={userId}
+                                                    onChange={(e) => setUserId(e.target.value)}
                                                     className="peer w-full bg-gray-50 border border-gray-200 rounded-xl pl-5 pr-[220px] py-3.5 md:py-4 text-base text-gray-900 outline-none focus:border-[#a50034] focus:ring-1 focus:ring-[#a50034]/20 transition-all placeholder-transparent"
-                                                    placeholder="Roll Number"
+                                                    placeholder={identifierLabel}
                                                     required
                                                 />
                                                 <span className="absolute right-5 top-3.5 md:top-4 text-gray-400 text-sm font-medium pointer-events-none">
                                                     {getEmailDomain()}
                                                 </span>
                                                 <label className="absolute left-5 top-3.5 md:top-4 text-gray-400 text-sm transition-all pointer-events-none peer-placeholder-shown:text-base peer-focus:text-xs peer-focus:-translate-y-2.5 peer-focus:text-[#a50034] peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:-translate-y-6 bg-white px-1 peer-[:not(:placeholder-shown)]:text-[#a50034]">
-                                                    Roll Number
+                                                    {identifierLabel}
                                                 </label>
                                             </div>
                                         </div>
@@ -337,9 +374,9 @@ const AuthPage = () => {
 
             {/* Toast Notification */}
             {showToast && (
-                <div className="fixed bottom-6 left-6 right-6 md:left-auto md:bottom-8 md:right-8 transform transition-all duration-400 z-50 bg-white border-l-4 border-[#a50034] shadow-2xl rounded-xl p-4 md:p-5 flex items-center gap-4 md:min-w-[360px] pr-8 ring-1 ring-black/5">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-50 text-[#a50034] flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />
+                <div className={`fixed bottom-6 left-6 right-6 md:left-auto md:bottom-8 md:right-8 transform transition-all duration-400 z-50 bg-white border-l-4 ${toastType === 'error' ? 'border-red-500' : 'border-[#a50034]'} shadow-2xl rounded-xl p-4 md:p-5 flex items-center gap-4 md:min-w-[360px] pr-8 ring-1 ring-black/5`}>
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${toastType === 'error' ? 'bg-red-50 text-red-600' : 'bg-red-50 text-[#a50034]'} flex items-center justify-center shrink-0`}>
+                        <ToastIcon className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div>
                         <h4 className="font-bold text-gray-900 text-sm md:text-base">{toastMessage.title}</h4>
