@@ -94,10 +94,10 @@ export default function TimetablePage() {
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
       <AddEventModal {...addModal} onClose={() => setAddModal({ ...addModal, isOpen: false })} onSubmit={handleSaveEvent} />
-      <EditEventModal 
-        {...editModal} 
-        onClose={() => setEditModal({ ...editModal, isOpen: false })} 
-        onUpdate={handleShiftEvent} 
+      <EditEventModal
+        {...editModal}
+        onClose={() => setEditModal({ ...editModal, isOpen: false })}
+        onUpdate={handleShiftEvent}
         onMarkCancelled={handleMarkCancelled}
         onMarkScheduled={handleMarkScheduled}
       />
@@ -110,9 +110,9 @@ export default function TimetablePage() {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        <TopToolbar 
-          onOpenSidebar={() => setIsSidebarOpen(true)} 
-          view={view} 
+        <TopToolbar
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+          view={view}
           setView={setView}
           title="Timetable"
           subtitle="Ettimadai Campus"
@@ -153,7 +153,7 @@ export default function TimetablePage() {
                               <div className="w-full h-full flex p-1">
                                 {event ? (
                                   <div onClick={() => setEditModal({ isOpen: true, event, day, slotId: slot.id })} className={`flex-1 p-2 rounded-2xl border flex flex-col items-center justify-center transition-all hover:scale-[1.03] shadow-sm relative overflow-hidden ${getTypeStyles(event)}`}>
-                                    {(event.status === 'cancelled' || event.isCancelled) && <div className="absolute top-0 right-0 p-1.5"><Trash2 size={10} className="text-red-300"/></div>}
+                                    {(event.status === 'cancelled' || event.isCancelled) && <div className="absolute top-0 right-0 p-1.5"><Trash2 size={10} className="text-red-300" /></div>}
                                     {event.status === 'completed' && <div className="absolute top-0 right-0 p-1.5 bg-green-500 rounded-bl-lg"><div className="text-white text-[8px] font-black">✓</div></div>}
                                     <div className={`text-xs font-black leading-tight ${(event.status === 'cancelled' || event.isCancelled) ? 'line-through opacity-40' : 'opacity-90'}`}>{event.code}</div>
                                     <div className="text-[11px] font-bold hidden md:block opacity-60 truncate max-w-full px-1">{event.title}</div>
@@ -161,7 +161,7 @@ export default function TimetablePage() {
                                   </div>
                                 ) : (
                                   <button onClick={() => setAddModal({ isOpen: true, day, slotId: slot.id })} className={`flex-1 w-full h-full flex items-center justify-center transition-all rounded-2xl group/btn ${isToday ? "text-red-100 hover:text-[#8B0000] hover:bg-red-100/50" : "text-slate-100 hover:text-[#8B0000] hover:bg-red-50/50"}`}>
-                                    <Plus size={20} strokeWidth={3} className="group-hover/btn:scale-125 transition-transform"/>
+                                    <Plus size={20} strokeWidth={3} className="group-hover/btn:scale-125 transition-transform" />
                                   </button>
                                 )}
                               </div>
@@ -173,10 +173,12 @@ export default function TimetablePage() {
                           {(() => {
                             const event = getEventForSlot(activeDay, slot.id);
                             return event ? (
-                              <div onClick={() => setEditModal({ isOpen: true, event, day: activeDay, slotId: slot.id })} className={`p-8 rounded-[2rem] border shadow-md cursor-pointer transition-transform hover:scale-[1.01] ${getTypeStyles(event)}`}>
+                              <div onClick={() => setEditModal({ isOpen: true, event, day: activeDay, slotId: slot.id })} className={`p-8 rounded-[2rem] border shadow-md cursor-pointer transition-transform hover:scale-[1.01] relative overflow-hidden ${getTypeStyles(event)}`}>
+                                {(event.status === 'cancelled' || event.isCancelled) && <div className="absolute top-0 right-0 p-2"><Trash2 size={14} className="text-red-300" /></div>}
+                                {event.status === 'completed' && <div className="absolute top-3 right-3 bg-green-500 rounded-full w-7 h-7 flex items-center justify-center shadow-lg"><span className="text-white text-sm font-black">✓</span></div>}
                                 <div className="flex justify-between items-center">
                                   <div>
-                                    <div className="text-sm font-black mb-1 opacity-60 tracking-widest uppercase">{event.code} {event.isCancelled && "(CANCELLED)"}</div>
+                                    <div className="text-sm font-black mb-1 opacity-60 tracking-widest uppercase">{event.code} {event.isCancelled && "(CANCELLED)"} {event.status === 'completed' && "(COMPLETED)"}</div>
                                     <div className={`text-3xl font-black ${event.isCancelled ? 'line-through' : ''}`}>{event.title}</div>
                                   </div>
                                   <div className="text-right space-y-2">

@@ -67,7 +67,7 @@ const AuthPage = () => {
         }
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
 
         const trimmedId = userId.trim();
@@ -95,7 +95,7 @@ const AuthPage = () => {
         }
 
         const fullEmail = `${normalizedIdentifier}${getEmailDomain()}`;
-        const loginResult = login(fullEmail, password, currentRole, normalizedIdentifier, studentDetails);
+        const loginResult = await login(fullEmail, password, currentRole, normalizedIdentifier, studentDetails);
 
         if (!loginResult?.success) {
             showToastNotification('Login Failed', loginResult?.error || 'Unable to login with the provided credentials.', 'error');

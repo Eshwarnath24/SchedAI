@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
-import { 
-  LayoutDashboard, 
-  Calendar as CalendarIcon, 
-  X, 
+import {
+  LayoutDashboard,
+  Calendar as CalendarIcon,
+  X,
   LogOut,
   BarChart3,
   FileText,
@@ -16,7 +16,7 @@ import {
 const Sidebar = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useContext(AppContext);
+  const { logout, currentTeacher } = useContext(AppContext);
   const activeTab = location.pathname.slice(1) || 'dashboard'; // Remove leading slash, default to dashboard
 
   const handleLogout = () => {
@@ -62,11 +62,11 @@ const Sidebar = ({ onClose }) => {
       <div className="mt-auto p-6 border-t border-slate-100">
         <div className="flex items-center gap-3 p-3 mb-4 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden">
           <div className="w-10 h-10 rounded-full bg-slate-300 shrink-0 overflow-hidden ring-2 ring-white">
-            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100" alt="Profile" className="w-full h-full object-cover" />
+            <img src={currentTeacher?.profileImage || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100"} alt="Profile" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col text-left min-w-0">
-            <span className="text-sm font-bold text-slate-800 truncate">Dr. Robert Fox</span>
-            <span className="text-[10px] text-slate-500 font-medium uppercase truncate">Associate Professor</span>
+            <span className="text-sm font-bold text-slate-800 truncate">{currentTeacher?.name || 'Faculty'}</span>
+            <span className="text-[10px] text-slate-500 font-medium uppercase truncate">{currentTeacher?.designation || 'Faculty'}</span>
           </div>
         </div>
         <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 px-4 text-red-600 hover:bg-red-50 rounded-xl text-sm font-bold transition-colors">
