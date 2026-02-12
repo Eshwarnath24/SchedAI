@@ -1,48 +1,408 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { Download, BookOpen, Clock, Briefcase, Calendar, UserCheck, Menu, Layout, Printer } from 'lucide-react';
+import { AppContext } from '../../context/AppContext';
 import Sidebar from '../../components/Sidebar';
+import WorkloadReportModal from '../../components/WorkloadReportModal';
+import { buildFacultyActivityReport } from '../../utils/generateReports';
+import { buildCompletedEntries, buildChartData, calculateTotals } from '../../utils/workloadPageUtils';
 
-const Workload = () => {
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-4 border border-rose-100 shadow-xl rounded-xl text-sm min-w-[180px] z-50">
+        <p className="font-bold text-gray-800 mb-2 border-b border-gray-100 pb-2">
+          {label}
+        </p>
+
+        <div className="space-y-2">
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-sm"
+                  style={{ backgroundColor: entry.fill }}
+                ></div>
+                <span className="text-gray-600 capitalize text-xs font-medium">
+                  {entry.name}
+                </span>
+              </div>
+              <span className="font-bold text-gray-900">
+                {entry.value}h
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
+          <span className="text-gray-500 text-xs font-bold uppercase">
+            Total
+          </span>
+          <span className="font-extrabold text-rose-950 text-base">
+            {payload.reduce((a, b) => a + b.value, 0)} hrs
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const StatCard = ({ icon: Icon, label, value, colorClass, iconColorClass }) => (
+  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] hover:shadow-lg transition-all duration-300 flex items-center gap-4 relative overflow-hidden group">
+    <div
+      className={`absolute right-[-20px] top-[-20px] w-32 h-32 rounded-full opacity-5 group-hover:scale-110 transition-transform duration-500 ${iconColorClass.replace(
+        'text-',
+        'bg-'
+      )}`}
+    ></div>
+
+    <div
+      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClass} ${iconColorClass}`}
+    >
+      {Icon && <Icon size={24} strokeWidth={2} />}
+    </div>
+
+    <div className="relative z-10">
+      <p className="text-[10px] sm:text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">
+        {label}
+      </p>
+      <p className="text-xl sm:text-2xl font-extrabold text-gray-800 leading-none">
+        {value}
+      </p>
+    </div>
+  </div>
+);
+
+// --- MAIN PAGE ---
+
+export default function WorkloadPage() {
+  const { events, currentTeacher } = useContext(AppContext);
+
+  const [academicYear, setAcademicYear] = useState('2025-2026');
+  const [semester, setSemester] = useState('Odd');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
+  const teacherName = currentTeacher?.name || 'Faculty Member';
+  const teacherDept = currentTeacher?.department || 'General Studies';
+  const teacherId = currentTeacher?.id || 'ID-000';
+
+  const facultyReport = useMemo(() => {
+    return buildFacultyActivityReport({
+      facultyId: currentTeacher?.id || 'FAC-001',
+      facultyName: currentTeacher?.name || 'Faculty Member',
+      events: events || {},
+      assignedCourses: currentTeacher?.courses || [],
+      maxWeeklyHours: 25,
+    });
+  }, [events, currentTeacher]);
+
+  const completedEntries = useMemo(
+    () => buildCompletedEntries(facultyReport),
+    [facultyReport]
+  );
+
+  const chartData = useMemo(
+    () => buildChartData(facultyReport),
+    [facultyReport]
+  );
+
+  const { totalTheory, totalLab, totalAdmin, totalHours } = useMemo(
+    () => calculateTotals(completedEntries),
+    [completedEntries]
+  );
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
+    <>
+      <div className="flex h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-hidden print:hidden">
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 lg:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 lg:hidden print:hidden"
           onClick={() => setIsSidebarOpen(false)}
-        />
+        ></div>
       )}
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+      <aside
+        className={`
+          fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform print:hidden
+          ${
+            isSidebarOpen
+              ? 'translate-x-0'
+              : '-translate-x-full lg:translate-x-0'
+          }
+        `}
+      >
         <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto w-full relative">
-        {/* Mobile Header Toggle */}
-        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
+      <main className="flex-1 overflow-y-auto w-full relative print:overflow-visible print:h-auto">
+        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 print:hidden">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
-            <span className="font-bold text-slate-800">Amrita</span>
+            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">
+              A
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-slate-800">Amrita</span>
+              <span className="text-[10px] text-slate-500">
+                {teacherDept}
+              </span>
+            </div>
           </div>
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-            <span>Menu</span>
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
+            <Menu size={24} />
           </button>
         </header>
 
-        <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
-          <div className="flex items-center justify-center h-full">
-            <h1 className="text-4xl font-black text-slate-900">Workload Management</h1>
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 tracking-tight">
+                My Workload Report
+              </h2>
+              <p className="text-gray-500 text-xs sm:text-sm mt-1 flex items-center gap-2">
+                <span className="inline-block w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                Analysis of your daily and weekly teaching distribution
+              </p>
+            </div>
+
+            <div className="flex gap-2 w-full md:w-auto print:hidden">
+              <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-rose-900 bg-white border border-rose-100 rounded-lg hover:bg-rose-50 hover:border-rose-200 shadow-sm transition-all whitespace-nowrap">
+                <Download size={16} />
+                <span className="inline">Export</span>
+              </button>
+
+              <button 
+                onClick={() => setShowPrintModal(true)}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-rose-950 rounded-lg hover:bg-rose-900 shadow-md shadow-rose-900/20 transition-all whitespace-nowrap"
+              >
+                <Printer size={16} />
+                <span className="inline">Print</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-2 sm:p-1.5 mb-8">
+            <div className="flex flex-col lg:flex-row gap-2">
+              <div className="flex-1 bg-rose-50/50 rounded-xl border border-rose-100 px-4 sm:px-5 py-2.5 flex flex-col justify-center">
+                <span className="text-[10px] font-bold text-rose-900/60 uppercase tracking-wider">
+                  Faculty Profile
+                </span>
+
+                <div className="flex items-center gap-2 mt-0.5">
+                  <UserCheck size={16} className="text-rose-900" />
+                  <span className="font-bold text-gray-800 text-sm truncate">
+                    {teacherName} (ID: {teacherId})
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex-[2] flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 bg-white rounded-xl border border-gray-100 px-4 py-2.5 flex flex-col justify-center hover:border-gray-300 transition-colors">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Academic Year
+                  </label>
+
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Calendar
+                      size={14}
+                      className="text-gray-400 flex-shrink-0"
+                    />
+                    <select
+                      value={academicYear}
+                      onChange={(e) => setAcademicYear(e.target.value)}
+                      className="w-full bg-transparent font-semibold text-sm text-gray-700 focus:outline-none cursor-pointer"
+                    >
+                      <option>2025-2026</option>
+                      <option>2024-2025</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex-1 bg-white rounded-xl border border-gray-100 px-4 py-2.5 flex flex-col justify-center hover:border-gray-300 transition-colors">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                    Semester
+                  </label>
+
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Clock
+                      size={14}
+                      className="text-gray-400 flex-shrink-0"
+                    />
+                    <select
+                      value={semester}
+                      onChange={(e) => setSemester(e.target.value)}
+                      className="w-full bg-transparent font-semibold text-sm text-gray-700 focus:outline-none cursor-pointer"
+                    >
+                      <option>Odd (Current)</option>
+                      <option>Even</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
+            <StatCard
+              icon={Clock}
+              label="Total Weekly Load"
+              value={`${totalHours} Hrs`}
+              colorClass="bg-rose-50"
+              iconColorClass="text-rose-900"
+            />
+            <StatCard
+              icon={BookOpen}
+              label="Theory Sessions"
+              value={`${totalTheory} Hrs`}
+              colorClass="bg-red-50"
+              iconColorClass="text-[#A6192E]"
+            />
+            <StatCard
+              icon={Layout}
+              label="Lab / Practical"
+              value={`${totalLab} Hrs`}
+              colorClass="bg-amber-50"
+              iconColorClass="text-[#F2A900]"
+            />
+            <StatCard
+              icon={Briefcase}
+              label="Admin / Research"
+              value={`${totalAdmin} Hrs`}
+              colorClass="bg-gray-100"
+              iconColorClass="text-gray-600"
+            />
+          </div>
+
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Your Schedule Distribution
+                </h3>
+                <p className="text-sm text-gray-400 font-medium">
+                  Weekly breakdown by activity type
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100 w-full sm:w-auto">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#A6192E]"></span>
+                  Theory
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F2A900]"></span>
+                  Lab
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#555555]"></span>
+                  Admin
+                </div>
+              </div>
+            </div>
+
+            <div className="h-[300px] sm:h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f0f0f0"
+                  />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{
+                      fill: '#6b7280',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                    dy={10}
+                    interval={0}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  />
+                  <Tooltip
+                    content={<CustomTooltip />}
+                    cursor={{ fill: 'rgba(243, 244, 246, 0.6)' }}
+                  />
+                  <Bar
+                    dataKey="theory"
+                    stackId="a"
+                    fill="#A6192E"
+                    name="Theory"
+                    radius={[0, 0, 4, 4]}
+                    maxBarSize={40}
+                  />
+                  <Bar
+                    dataKey="lab"
+                    stackId="a"
+                    fill="#F2A900"
+                    name="Lab"
+                    radius={[0, 0, 0, 0]}
+                    maxBarSize={40}
+                  />
+                  <Bar
+                    dataKey="admin"
+                    stackId="a"
+                    fill="#555555"
+                    name="Admin"
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={40}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
+
+        <footer className="bg-white border-t border-gray-100 py-6 sm:py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400 font-medium">
+            <p className="text-center md:text-left">
+              Amrita Vishwa Vidyapeetham • University Management System
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+              <span className="hover:text-rose-900 cursor-pointer transition-colors">
+                Privacy Policy
+              </span>
+              <span className="hover:text-rose-900 cursor-pointer transition-colors">
+                Support
+              </span>
+              <span className="hidden sm:inline text-gray-300">|</span>
+              <span>v3.0.1 (M3-Module)</span>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
+      <WorkloadReportModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        stats={{ totalHours, totalTheory, totalLab, totalAdmin }}
+        chartData={chartData}
+        entries={completedEntries}
+        teacher={currentTeacher || {}}
+      />
+    </>
   );
-};
-
-export default Workload;
+}
