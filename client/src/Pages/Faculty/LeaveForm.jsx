@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Menu, X, FileText, ChevronRight, AlertCircle, Trash2, Edit2, RotateCcw } from 'lucide-react';
-import Sidebar from '../../../../../client/src/components/Sidebar';
+import Sidebar from '../../components/Sidebar';
 
 const readLocal = (key, fallback) => {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
