@@ -30,7 +30,7 @@ import {
   buildLocationSummary,
   buildEngagementStats,
   buildLeaveImpacts,
-} from '../../utils/reportsPageUtils';
+} from '../../utils/reportPageUtils';
 
 const Badge = ({ children, type }) => {
   const styles = {

@@ -1,13 +1,5 @@
 import { CURRENT_TEACHER } from './database';
 import { DAYS, SLOTS } from './constants';
-/**
- * Report Data Adapter
- * ───────────────────
- * Bridges AppContext data → buildFacultyActivityReport().
- * Strictly scoped to the logged-in faculty; no global aggregation.
- */
-
-import { CURRENT_TEACHER } from './database';
 
 /**
  * Produce the params object that buildFacultyActivityReport expects,
@@ -36,64 +28,6 @@ export function prepareFacultyReportInput(events, teacher = CURRENT_TEACHER) {
         maxWeeklyHours: 20,                            // institutional constant
     };
 }
-
-// ── Backward-compat default export (unused, kept to avoid import errors) ──
-export const reportData = {
-    teachers: [],
-    timetable: [],
-    leaves: [],
-    cancelledClasses: [],
-    extraClasses: [],
-    substitutions: [],
-};
-
-
- /** Report Data Adapter
- * ───────────────────
- * Bridges AppContext data → buildFacultyActivityReport().
- * Strictly scoped to the logged-in faculty; no global aggregation.
- */
-
-import { CURRENT_TEACHER } from './database';
-
-/**
- * Produce the params object that buildFacultyActivityReport expects,
- * using the logged-in teacher and the live events map.
- *
- * @param {Object} events          – timetable events from AppContext  { Monday:[…], … }
- * @param {Object} teacher         – currentTeacher from AppContext (or CURRENT_TEACHER fallback)
- * @returns {{ facultyId, facultyName, events, assignedCourses, maxWeeklyHours }}
- */
-export function prepareFacultyReportInput(events, teacher = CURRENT_TEACHER) {
-    if (!teacher || !events) {
-        return {
-            facultyId: teacher?.id || '',
-            facultyName: teacher?.name || '',
-            events: {},
-            assignedCourses: [],
-            maxWeeklyHours: 20,
-        };
-    }
-
-    return {
-        facultyId: teacher.id,
-        facultyName: teacher.name,
-        events,                                       // pass through unchanged
-        assignedCourses: teacher.courses || [],        // from database.js
-        maxWeeklyHours: 20,                            // institutional constant
-    };
-}
-
-// ── Backward-compat default export (unused, kept to avoid import errors) ──
-export const reportData = {
-    teachers: [],
-    timetable: [],
-    leaves: [],
-    cancelledClasses: [],
-    extraClasses: [],
-    substitutions: [],
-};
-
 
 /**
  * Generate dynamic report data from current teacher and timetable
