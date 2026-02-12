@@ -1,12 +1,12 @@
 export const SECTIONS = ['CSE A', 'CSE B', 'CSE C', 'CSE D', 'CSE E', 'CSE F'];
 
 export const TEACHERS = [
-  'Dr. Robert Fox',
-  'Dr. S. Kumar',
-  'Prof. Anjali Menon',
-  'Dr. Lakshmi Thomas',
-  'Prof. Rahul Verma',
-  'Dr. P. Jayakumar'
+  { name: 'Dr. Robert Fox', isTeacherAvalible: true },
+  { name: 'Dr. S. Kumar', isTeacherAvalible: false },
+  { name: 'Prof. Anjali Menon', isTeacherAvalible: true },
+  { name: 'Dr. Lakshmi Thomas', isTeacherAvalible: true },
+  { name: 'Prof. Rahul Verma', isTeacherAvalible: false },
+  { name: 'Dr. P. Jayakumar', isTeacherAvalible: true },
 ];
 
 export const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
