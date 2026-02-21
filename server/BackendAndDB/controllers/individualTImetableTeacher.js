@@ -12,7 +12,7 @@ const Section = require('../DB_models/Section');
 const Room = require('../DB_models/Room');
 
 // Connect to MongoDB
-mongoose.connect("mongodb+srv://vishalRajaraman:Vishal%40123.@schedai.p21uk9p.mongodb.net/?appName=schedAI")
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error(err));
 

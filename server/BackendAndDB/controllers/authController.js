@@ -3,7 +3,6 @@ const Course = require('../DB_models/Course');
 const bcrypt = require('bcryptjs');
 
 // POST /api/auth/register — Register a new user
-// POST /api/auth/register — Register a new user
 const registerUser = async (req, res) => {
     try {
         // 1. Get fields from the request body
@@ -13,7 +12,6 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Please provide all required fields' });
         }
 
-        // 2. Set Default Rank if missing (must match User schema enum)
         // 2. Set Default Rank if missing (must match User schema enum)
         if (!rank) {
             rank = "Assistant Prof";

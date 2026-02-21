@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: '../.env' }); // Adjust path if your .env is in backend root
 
 // Load DB_models
-const Schedule = require('../DB_models/Schedule');
+const Schedule = require('../DB_models/schedule');
 const Room = require('../DB_models/Room');
 const Course = require('../DB_models/Course');
 const Section = require('../DB_models/Section');
@@ -23,7 +23,7 @@ const generateSchedule = async () => {
 
         // A. CONNECT TO DB (Only needed for standalone testing)
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect("mongodb+srv://vishalRajaraman:Vishal%40123.@schedai.p21uk9p.mongodb.net/?appName=schedAI");
+            await mongoose.connect(process.env.MONGO_URI);
             console.log("✅ MongoDB Connected");
         }
 
