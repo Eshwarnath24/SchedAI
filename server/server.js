@@ -25,7 +25,7 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/auth', authRoutes);
 
 // Connect to DB
-mongoose.connect(process.env.MONGO_URI || "mongodb+srv://vishalRajaraman:Vishal%40123.@schedai.p21uk9p.mongodb.net/?appName=schedAI")
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.log(err));
 
