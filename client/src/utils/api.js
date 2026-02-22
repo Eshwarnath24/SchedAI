@@ -1,5 +1,5 @@
 // Centralized API service for fetching timetable data from the backend
-const API_BASE = '/api';
+const API_BASE = 'https://schedai.onrender.com/api';
 
 // Authentication
 export const loginApi = async (email, password, role) => {
