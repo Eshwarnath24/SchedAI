@@ -1,0 +1,17 @@
+{
+  "name": "schedai",
+  "version": "1.0.0",
+  "description": "SchedAI - Educational Scheduling System",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=client",
+    "dev:server": "npm run server --workspace=server",
+    "dev:all": "npm run dev --workspace=client & npm run server --workspace=server",
+    "build": "npm run build --workspace=client",
+    "start": "npm run start --workspace=server"
+  }
+}

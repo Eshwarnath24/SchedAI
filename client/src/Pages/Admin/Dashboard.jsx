@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Calendar as CalendarIcon,
     Bell,
@@ -12,6 +12,7 @@ import {
     MapPin,
     Star
 } from 'lucide-react';
+import LeaveForm from './LeaveForm';
 
 /**
  * AMRITA BRAND THEME - VIBRANT RED & YELLOW
@@ -76,7 +77,9 @@ const customStyles = `
   }
 `;
 
-const App = () => {
+const Dashboard = () => {
+    const [activeTab, setActiveTab] = useState('dashboard');
+    
     const announcements = [
         { id: 1, title: "Board of Studies Meeting", tag: "High", time: "2:00 PM Today", active: true },
         { id: 2, title: "NAAC Audit Documentation", tag: "Urgent", time: "Due by Friday", active: false },
@@ -98,10 +101,39 @@ const App = () => {
     const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     return (
-        <div className="min-h-screen bg-[#fffdf5] p-5 font-sans overflow-hidden">
+        <div className="min-h-screen bg-[#fffdf5] font-sans">
             <style>{customStyles}</style>
+            
+            {/* TAB NAVIGATION */}
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex gap-8 items-center">
+                    <button
+                        onClick={() => setActiveTab('dashboard')}
+                        className={`text-sm font-bold uppercase tracking-wider transition-all pb-3 border-b-2 ${
+                            activeTab === 'dashboard'
+                                ? 'border-red-600 text-red-600'
+                                : 'border-transparent text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        Dashboard
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('leave-form')}
+                        className={`text-sm font-bold uppercase tracking-wider transition-all pb-3 border-b-2 ${
+                            activeTab === 'leave-form'
+                                ? 'border-red-600 text-red-600'
+                                : 'border-transparent text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                        Leave Management
+                    </button>
+                </div>
+            </div>
 
-            <div className="grid-container">
+            {/* CONTENT */}
+            {activeTab === 'dashboard' ? (
+                <div className="p-5 overflow-hidden">
+                    <div className="grid-container">
 
                 {/* AREA 1: ADMIN PROFILE & WELCOME */}
                 <div className="area-1 glass-card bg-brand-gradient relative p-8 text-white border-none glow-yellow">
@@ -281,9 +313,15 @@ const App = () => {
                         <BarChart3 className="text-slate-50 opacity-20" size={100} />
                     </div>
                 </div>
-            </div>
+                    </div>
+                </div>
+            ) : (
+                <LeaveForm />
+            )}
+            
+            <style>{customStyles}</style>
         </div>
     );
 };
 
-export default App;
+export default Dashboard;
