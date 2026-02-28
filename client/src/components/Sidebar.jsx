@@ -10,7 +10,8 @@ import {
   FileText,
   Users,
   Megaphone,
-  Activity
+  Activity,
+  MapPin
 } from "lucide-react";
 
 const Sidebar = ({ onClose }) => {
@@ -56,6 +57,9 @@ const Sidebar = ({ onClose }) => {
           </Link>
           <Link to="/announcements" onClick={onClose} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "announcements" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
             <Megaphone size={20} /> Announcements
+          </Link>
+          <Link to="/map" onClick={onClose} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-left transition-all ${activeTab === "map" ? "bg-[#F1F5F9] text-[#8B0000]" : "text-slate-500 hover:bg-slate-50"}`}>
+            <MapPin size={20} /> Map
           </Link>
         </nav>
       </div>

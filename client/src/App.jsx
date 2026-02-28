@@ -15,6 +15,7 @@ import StudentDashboard from "./Pages/Student/Dashboard";
 import StudentAnnouncements from "./Pages/Student/Announcements";
 import SectionTimeTable from "./Pages/Student/SectionTimeTable";
 import TeachersTimeTable from "./Pages/Student/TeachersTimeTable";
+import Map from "./Pages/Map";
 
 const App = () => {
   const { isAuthenticated, userRole } = useContext(AppContext);
@@ -23,11 +24,11 @@ const App = () => {
     <Routes>
       <Route path="/auth" element={!isAuthenticated ? <AuthPage /> : <Navigate to="/dashboard" />} />
       <Route path="/" element={!isAuthenticated ? <Navigate to="/auth" /> : <Navigate to="/dashboard" />} />
-      
+
       {/* Universal Dashboard Route - Redirects based on role */}
       <Route path="/dashboard" element={
-        isAuthenticated 
-          ? (userRole === 'student' ? <Navigate to="/student/dashboard" /> : <Dashboard />) 
+        isAuthenticated
+          ? (userRole === 'student' ? <Navigate to="/student/dashboard" /> : <Dashboard />)
           : <Navigate to="/auth" />
       } />
 
@@ -47,6 +48,7 @@ const App = () => {
       <Route path="/leave-form" element={isAuthenticated ? <LeaveForm /> : <Navigate to="/auth" />} />
       <Route path="/allocations" element={isAuthenticated ? <Allocations /> : <Navigate to="/auth" />} />
       <Route path="/announcements" element={isAuthenticated ? <Announcements /> : <Navigate to="/auth" />} />
+      <Route path="/map" element={isAuthenticated ? <Map /> : <Navigate to="/auth" />} />
     </Routes>
   );
 };

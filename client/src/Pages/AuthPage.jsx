@@ -108,10 +108,12 @@ const AuthPage = () => {
         // Navigate to dashboard after a brief delay
         setTimeout(() => {
             setShowToast(false);
-            if (currentRole === 'student') {
-                navigate('/student/dashboard');
-            } else {
+            if (currentRole === 'admin') {
+                navigate('/admin/dashboard');
+            } else if (currentRole == 'teacher') {
                 navigate('/dashboard');
+            } else {
+                navigate('/student/dashboard');
             }
         }, 1500);
     };
