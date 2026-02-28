@@ -20,7 +20,7 @@ const checkClassTimetable = async () => {
   try {
     // 1. Find the Section (Class)
     // Let's look for "2ND-A" (Check your seed data for exact names)
-    const className = "2ND-A"; 
+    const className = "CSE-A";
     const section = await Section.findOne({ name: className });
 
     if (!section) {
@@ -42,7 +42,7 @@ const checkClassTimetable = async () => {
     }
 
     // 3. FILTER BY SECTION ID
-    const classTimetable = schedule.classes.filter(cls => 
+    const classTimetable = schedule.classes.filter(cls =>
       cls.section && cls.section._id.toString() === section._id.toString()
     );
 
@@ -57,7 +57,7 @@ const checkClassTimetable = async () => {
     } else {
       // Sort by Day then Slot
       const dayOrder = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5 };
-      
+
       classTimetable.sort((a, b) => {
         if (dayOrder[a.day] !== dayOrder[b.day]) return dayOrder[a.day] - dayOrder[b.day];
         return a.slotIndex - b.slotIndex;
@@ -69,7 +69,7 @@ const checkClassTimetable = async () => {
       });
     }
     console.log("==============================================================================");
-    
+
     process.exit(0);
 
   } catch (err) {
