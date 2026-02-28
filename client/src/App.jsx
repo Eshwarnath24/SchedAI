@@ -7,6 +7,7 @@ import LeaveForm from "./Pages/Faculty/LeaveForm";
 import Allocations from "./Pages/Faculty/Allocations";
 import Announcements from "./Pages/Faculty/Announcements";
 import Reports from "./Pages/Faculty/Reports";
+import AdminDashboard from "./Pages/Admin/Dashboard";
 import AuthPage from "./Pages/AuthPage";
 import { AppContext } from "./context/AppContext";
 
@@ -14,6 +15,7 @@ import StudentDashboard from "./Pages/Student/Dashboard";
 import StudentAnnouncements from "./Pages/Student/Announcements";
 import SectionTimeTable from "./Pages/Student/SectionTimeTable";
 import TeachersTimeTable from "./Pages/Student/TeachersTimeTable";
+import Map from "./Pages/Map";
 
 const App = () => {
   const { isAuthenticated, userRole, authLoading } = useContext(AppContext);
@@ -48,6 +50,9 @@ const App = () => {
       <Route path="/student/section-timetable" element={isAuthenticated && userRole === 'student' ? <SectionTimeTable /> : <Navigate to="/auth" />} />
       <Route path="/student/teachers-timetable" element={isAuthenticated && userRole === 'student' ? <TeachersTimeTable /> : <Navigate to="/auth" />} />
 
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard" element={isAuthenticated && userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/auth" />} />
+
       {/* Faculty Routes */}
       <Route path="/time-table" element={isAuthenticated ? <TimeTable /> : <Navigate to="/auth" />} />
       <Route path="/workload" element={isAuthenticated ? <Workload /> : <Navigate to="/auth" />} />
@@ -55,6 +60,7 @@ const App = () => {
       <Route path="/leave-form" element={isAuthenticated ? <LeaveForm /> : <Navigate to="/auth" />} />
       <Route path="/allocations" element={isAuthenticated ? <Allocations /> : <Navigate to="/auth" />} />
       <Route path="/announcements" element={isAuthenticated ? <Announcements /> : <Navigate to="/auth" />} />
+      <Route path="/map" element={isAuthenticated ? <Map /> : <Navigate to="/auth" />} />
     </Routes>
   );
 };

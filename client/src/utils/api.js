@@ -1,5 +1,5 @@
 // Centralized API service for fetching timetable data from the backend
-const API_BASE = import.meta.env.VITE_API_BASE
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://schedai.onrender.com/api';
 
 // --- Token helpers ---
 const TOKEN_KEY = 'schedai_jwt_token';

@@ -23,7 +23,7 @@ const generateSchedule = async () => {
 
         // A. CONNECT TO DB (Only needed for standalone testing)
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect("mongodb+srv://vishalRajaraman:Vishal%40123.@schedai.p21uk9p.mongodb.net/?appName=schedAI");
+            await mongoose.connect(process.env.MONGO_URI);
             console.log("✅ MongoDB Connected");
         }
 

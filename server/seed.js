@@ -54,7 +54,7 @@ const seedData = async () => {
     const users = await User.insertMany([
       {
         name: 'Dr. Robert Fox', // From your screenshot
-        email: 'robert.fox@univ.edu',
+        email: 'robert.fox@cse.cb.amrita',
         password: hashedPassword,
         role: 'Faculty',
         department: 'CSE',
@@ -66,7 +66,7 @@ const seedData = async () => {
       },
       {
         name: 'Dr. Alice Smith',
-        email: 'alice@univ.edu',
+        email: 'alice@cse.cb.amrita',
         password: hashedPassword,
         role: 'Admin',
         department: 'CSE',

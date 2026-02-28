@@ -3,6 +3,9 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
+// POST /api/auth/register — Register a new user
+router.post('/register', authController.registerUser);
+
 // POST /api/auth/login — Faculty/Admin login
 router.post('/login', authController.loginUser);
 

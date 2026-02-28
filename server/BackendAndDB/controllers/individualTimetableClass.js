@@ -12,7 +12,7 @@ const Room = require('../DB_models/Room');
 const User = require('../DB_models/User'); // Required to populate faculty names
 
 // Connect to DB
-mongoose.connect("mongodb+srv://vishalRajaraman:Vishal%40123.@schedai.p21uk9p.mongodb.net/?appName=schedAI")
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error(err));
 

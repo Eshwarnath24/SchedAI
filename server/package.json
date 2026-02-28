@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "server": "nodemon server.js",
     "test": "jest --verbose --forceExit --detectOpenHandles",
     "test:unit": "jest --verbose --testPathPattern=tests/unit",
     "test:integration": "jest --verbose --testPathPattern=tests/integration --forceExit --detectOpenHandles",
