@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Search, MapPin, Monitor, BookOpen, Coffee, Wind, Users, Info, DoorOpen, Trees, Archive, X, Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { buildingData } from '../utils/mapData';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
@@ -109,8 +110,9 @@ const BalconyBox = ({ label = "Balcony", className = "", style = {} }) => (
 );
 
 export default function Map() {
-    const { userRole } = useContext(AppContext);
+    const { userRole, logout } = useContext(AppContext);
     const isStudent = userRole === 'student';
+    const navigate = useNavigate();
 
     const [currentFloor, setCurrentFloor] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
@@ -118,6 +120,11 @@ export default function Map() {
     const [selectedItem, setSelectedItem] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/auth');
+    };
 
     const activeFloorData = buildingData[currentFloor];
 
@@ -173,17 +180,17 @@ export default function Map() {
             {/* Mobile overlay for faculty sidebar */}
             {!isStudent && isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 lg:hidden"
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] lg:hidden"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
 
             {/* Sidebar */}
             {isStudent ? (
-                <StudentSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} onLogout={() => { }} />
+                <StudentSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} onLogout={handleLogout} />
             ) : (
                 <aside className={`
-                    fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform
+                    fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-[1001] transition-transform duration-300 transform
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}>
                     <Sidebar onClose={() => setIsSidebarOpen(false)} />
@@ -194,7 +201,7 @@ export default function Map() {
             <main className="flex-1 overflow-y-auto bg-[#F4F6F9]">
 
                 {/* Mobile header toggle */}
-                <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0 sticky left-0 w-full z-20">
+                <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0 sticky left-0 w-full z-[110]">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
                         <span className="font-bold text-slate-800">Building Map</span>
@@ -208,7 +215,7 @@ export default function Map() {
                 </header>
 
                 <div className="flex flex-col">
-                    <div className="sticky left-0 z-20 w-[calc(100vw-2rem)] md:w-[calc(100vw-340px)] lg:w-[calc(100vw-360px)]">
+                    <div className="sticky left-0 z-[110] w-[calc(100vw-2rem)] md:w-[calc(100vw-340px)] lg:w-[calc(100vw-360px)]">
                         <div className="bg-white px-6 py-4 shadow-sm rounded-b-3xl mx-4 mt-4 border-b border-slate-100">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
                                 <div className="relative w-full md:w-96">

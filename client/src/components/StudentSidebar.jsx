@@ -32,14 +32,14 @@ const StudentSidebar = ({ mobileOpen, setMobileOpen, onLogout }) => {
       {/* Mobile Overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-[1000] bg-black/50 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
+        fixed inset-y-0 left-0 z-[1001] w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
         lg:translate-x-0 lg:static lg:inset-0
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
