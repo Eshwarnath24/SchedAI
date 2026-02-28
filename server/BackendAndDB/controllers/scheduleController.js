@@ -12,7 +12,7 @@ const Room = require('../DB_models/Room');
 const Course = require('../DB_models/Course');
 const Section = require('../DB_models/Section');
 const TimeSlot = require('../DB_models/timeSlot');
-const User = require('../DB_models/User'); 
+const User = require('../DB_models/User');
 
 // ==========================================
 // 1. THE MAIN FUNCTION (Generate Schedule)
@@ -30,8 +30,8 @@ const generateSchedule = async () => {
         // B. FETCH DATA
         console.log("📥 Fetching data from MongoDB...");
         const rooms = await Room.find({});
-        const faculty = await User.find({ role: 'Faculty' }); // Ensure 'role' matches your seed data
-        const courses = await Course.find({});
+        const faculty = await User.find({ role: { $in: ['Faculty', 'LabAssistant'] } });
+        const courses = await Course.find({}).populate('labAssistant');
         const sections = await Section.find({});
         const slots = await TimeSlot.find({});
 
@@ -64,7 +64,11 @@ const generateSchedule = async () => {
                 preferred_slots: f.preferredSlots || [],
                 expertise: f.expertise || [],
                 preferred_courses: [],
-                teaching_history: []
+                teaching_history: [],
+                role: f.role || "Faculty",
+                mentor_section: f.mentorSection ? f.mentorSection.toString() : null,
+                is_cir_only: f.isCirOnly || false,
+                cir_sub_type: f.cirSubType || null
             })),
             courses: courses.map(c => ({
                 id: c._id.toString(),
@@ -72,13 +76,17 @@ const generateSchedule = async () => {
                 duration: c.duration || 1,
                 subject_type: c.type,
                 faculty_id: null,
-                parallel_group: c.parallelGroup || null
+                parallel_group: c.parallelGroup || null,
+                cir_sub_type: c.cirSubType || null,
+                min_weekly_hours: c.minWeeklyHours || 3,
+                lab_assistant_id: c.labAssistant ? c.labAssistant._id.toString() : null
             })),
             sections: sections.map(s => ({
                 id: s._id.toString(),
                 size: s.studentCount,
                 year: s.year.toString(),
-                requires_access: s.requiresAccess
+                requires_access: s.requiresAccess,
+                mentor_id: s.mentor ? s.mentor.toString() : null
             })),
             slots: slots.map(s => ({
                 id: s.slotIndex,
@@ -91,8 +99,8 @@ const generateSchedule = async () => {
 
         // D. SPAWN RUST PROCESS
         console.log("🔥 Spawning Rust Worker...");
-        const rustBinaryPath = path.join(__dirname,'scheduler_worker.exe'); 
-        
+        const rustBinaryPath = path.join(__dirname, 'scheduler_worker.exe');
+
         const child = spawn(rustBinaryPath);
         let dataString = '';
         let errorString = '';
@@ -115,10 +123,10 @@ const generateSchedule = async () => {
             try {
                 const result = JSON.parse(dataString);
                 console.log(`✅ Success! Final Fitness: ${result.fitness}`);
-                
+
                 // SAVE TO DB
                 await saveToDatabase(result);
-                
+
                 console.log("🎉 PROCESS COMPLETE. You can now start the server.");
                 process.exit(0);
             } catch (err) {
@@ -138,7 +146,7 @@ const generateSchedule = async () => {
 // ==========================================
 const saveToDatabase = async (rustOutput) => {
     console.log("💾 Saving Schedule to Database...");
-    
+
     // Deactivate old schedules
     await Schedule.updateMany({}, { isActive: false });
 
@@ -152,6 +160,7 @@ const saveToDatabase = async (rustOutput) => {
             course: cls.course_id,
             faculty: cls.faculty_id,
             room: cls.room_id,
+            labAssistant: cls.lab_assistant_id || null,
             slotIndex: cls.slot_id,
             day: cls.day
         }))

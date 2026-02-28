@@ -3,7 +3,7 @@ import { getInitialTimetable, autoMarkCompletedClasses } from "../utils/timetabl
 import { announcements } from "../utils/announcements";
 import { CURRENT_TEACHER } from "../utils/database";
 import { parseStudentRollNumber } from "../utils/rollNumber";
-import { loginApi, fetchActiveSchedule, fetchTeacherSchedule } from "../utils/api";
+import { loginApi, studentLoginApi, verifyTokenApi, removeToken, fetchActiveSchedule, fetchTeacherSchedule } from "../utils/api";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AppContext = createContext();
@@ -20,6 +20,63 @@ export const AppContextProvider = (props) => {
     const [scheduleError, setScheduleError] = useState(null);
     const [scheduleMetadata, setScheduleMetadata] = useState(null);
     const [loggedInUser, setLoggedInUser] = useState(null); // Authenticated user from DB
+    const [authLoading, setAuthLoading] = useState(true); // Loading state while verifying stored token
+
+    // ---- Auto-login from stored JWT on mount ----
+    useEffect(() => {
+        const restoreSession = async () => {
+            try {
+                const data = await verifyTokenApi();
+                if (!data || !data.success) {
+                    setAuthLoading(false);
+                    return;
+                }
+
+                if (data.role === 'student' && data.student) {
+                    setIsAuthenticated(true);
+                    setUserRole('student');
+                    setStudentRollNo(data.student.rollNo);
+                    setStudentProfile({
+                        normalized: data.student.rollNo,
+                        sectionName: data.student.sectionName,
+                        sectionIndex: data.student.sectionIndex,
+                        sectionLetter: data.student.sectionLetter,
+                        branch: data.student.branch,
+                        batchYear: data.student.batchYear,
+                    });
+                    setLoggedInUser(null);
+                } else if (data.user) {
+                    const role = data.role; // 'teacher' or 'admin'
+                    setIsAuthenticated(true);
+                    setUserRole(role);
+                    setLoggedInUser(data.user);
+                    setStudentRollNo('');
+                    setStudentProfile(null);
+
+                    if (data.user.role === 'Faculty') {
+                        setCurrentTeacher(prev => ({
+                            ...prev,
+                            name: data.user.name || prev.name,
+                            department: data.user.department || prev.department,
+                            designation: data.user.rank || prev.designation,
+                            email: data.user.email || prev.email,
+                            officeRoom: data.user.officeLocation || prev.officeRoom,
+                            phone: data.user.phone || prev.phone,
+                        }));
+                        loadScheduleForTeacher(data.user._id);
+                    } else {
+                        loadFullSchedule();
+                    }
+                }
+            } catch (err) {
+                console.warn('⚠️ Could not restore session from token:', err.message);
+            } finally {
+                setAuthLoading(false);
+            }
+        };
+        restoreSession();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Fetch schedule for the logged-in teacher from the backend API
     const loadScheduleForTeacher = async (teacherId) => {
@@ -123,21 +180,33 @@ export const AppContextProvider = (props) => {
 
     // ----- LOGIN: authenticates against the backend -----
     const login = async (email, password, role, rollNo = '', studentDetails = null) => {
-        // For students, skip DB auth (they aren't in the User collection)
+        // For students, use the new student-login API
         if (role === 'student') {
-            const parsedDetails = studentDetails || parseStudentRollNumber(rollNo);
-            if (!parsedDetails) {
-                return {
-                    success: false,
-                    error: 'Invalid student roll number format. Expected format similar to CB.SC.U4CSE23XXX.',
-                };
+            try {
+                const result = await studentLoginApi(rollNo, password);
+                if (result.success && result.student) {
+                    setIsAuthenticated(true);
+                    setUserRole('student');
+                    setStudentRollNo(result.student.rollNo);
+                    setStudentProfile({
+                        normalized: result.student.rollNo,
+                        sectionName: result.student.sectionName,
+                        sectionIndex: result.student.sectionIndex,
+                        sectionLetter: result.student.sectionLetter,
+                        branch: result.student.branch,
+                        batchYear: result.student.batchYear,
+                        campus: result.student.campus,
+                        program: result.student.program,
+                        yearCode: result.student.yearCode,
+                        studentNumber: result.student.studentNumber,
+                    });
+                    setLoggedInUser(null);
+                    return { success: true };
+                }
+                return { success: false, error: 'Unexpected response from server.' };
+            } catch (err) {
+                return { success: false, error: err.message };
             }
-            setIsAuthenticated(true);
-            setUserRole(role);
-            setStudentRollNo(parsedDetails.normalized);
-            setStudentProfile(parsedDetails);
-            setLoggedInUser(null);
-            return { success: true };
         }
 
         // For teacher/admin, authenticate against MongoDB
@@ -182,6 +251,7 @@ export const AppContextProvider = (props) => {
         setLoggedInUser(null);
         setCurrentTeacher(CURRENT_TEACHER); // Reset to default mock data
         setEvents(getInitialTimetable());
+        removeToken(); // Clear JWT from localStorage
     };
 
     const value = {
@@ -203,6 +273,7 @@ export const AppContextProvider = (props) => {
         loggedInUser,
         loadScheduleForTeacher,
         loadFullSchedule,
+        authLoading,
     };
 
     return (

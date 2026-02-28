@@ -18,7 +18,19 @@ import TeachersTimeTable from "./Pages/Student/TeachersTimeTable";
 import Map from "./Pages/Map";
 
 const App = () => {
-  const { isAuthenticated, userRole } = useContext(AppContext);
+  const { isAuthenticated, userRole, authLoading } = useContext(AppContext);
+
+  // Show loading spinner while verifying stored JWT token
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#a50034] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
