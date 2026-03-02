@@ -16,6 +16,11 @@ import {
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+const expectFetchUrl = (expectedUrl) => {
+    const [calledUrl] = mockFetch.mock.calls[0] || [];
+    expect(calledUrl).toBe(expectedUrl);
+};
+
 beforeEach(() => {
     mockFetch.mockClear();
 });
@@ -58,7 +63,7 @@ describe('fetchActiveSchedule()', () => {
 
         const result = await fetchActiveSchedule();
         expect(result).toEqual(scheduleData);
-        expect(mockFetch).toHaveBeenCalledWith('/api/schedule/active');
+        expectFetchUrl('/api/schedule/active');
     });
 
     test('throws error on failure', async () => {
@@ -79,7 +84,7 @@ describe('fetchTeacherSchedule()', () => {
         });
 
         await fetchTeacherSchedule('teacher123');
-        expect(mockFetch).toHaveBeenCalledWith('/api/schedule/teacher/teacher123');
+        expectFetchUrl('/api/schedule/teacher/teacher123');
     });
 
     test('throws error on failure', async () => {
@@ -96,7 +101,7 @@ describe('fetchSectionSchedule()', () => {
         });
 
         await fetchSectionSchedule('sec123');
-        expect(mockFetch).toHaveBeenCalledWith('/api/schedule/section/sec123');
+        expectFetchUrl('/api/schedule/section/sec123');
     });
 
     test('throws error on failure', async () => {
@@ -115,7 +120,7 @@ describe('fetchSections()', () => {
 
         const result = await fetchSections();
         expect(result).toEqual(sections);
-        expect(mockFetch).toHaveBeenCalledWith('/api/schedule/sections');
+        expectFetchUrl('/api/schedule/sections');
     });
 });
 
@@ -129,7 +134,7 @@ describe('fetchTeachers()', () => {
 
         const result = await fetchTeachers();
         expect(result).toEqual(teachers);
-        expect(mockFetch).toHaveBeenCalledWith('/api/schedule/teachers');
+        expectFetchUrl('/api/schedule/teachers');
     });
 });
 
@@ -143,7 +148,7 @@ describe('fetchTimeSlots()', () => {
 
         const result = await fetchTimeSlots();
         expect(result).toEqual(slots);
-        expect(mockFetch).toHaveBeenCalledWith('/api/schedule/timeslots');
+        expectFetchUrl('/api/schedule/timeslots');
     });
 
     test('throws error on failure', async () => {

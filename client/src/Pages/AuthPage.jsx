@@ -7,6 +7,7 @@ import {
     ShieldCheck,
     ArrowRight,
     Eye,
+    EyeOff,
     Check,
     CheckCircle2,
     X,
@@ -20,6 +21,7 @@ const AuthPage = () => {
     const [currentRole, setCurrentRole] = useState('student');
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState({ title: '', message: '' });
@@ -323,7 +325,7 @@ const AuthPage = () => {
                                         {/* Password Input */}
                                         <div className="relative">
                                             <input
-                                                type="password"
+                                                type={showPassword ? 'text' : 'password'}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="peer w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 md:py-4 text-base text-gray-900 outline-none focus:border-[#a50034] focus:ring-1 focus:ring-[#a50034]/20 transition-all placeholder-transparent"
@@ -333,8 +335,17 @@ const AuthPage = () => {
                                             <label className="absolute left-5 top-3.5 md:top-4 text-gray-400 text-sm transition-all pointer-events-none peer-placeholder-shown:text-base peer-focus:text-xs peer-focus:-translate-y-2.5 peer-focus:text-[#a50034] peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:-translate-y-6 bg-white px-1 peer-[:not(:placeholder-shown)]:text-[#a50034]">
                                                 Password
                                             </label>
-                                            <button type="button" className="absolute right-5 top-3.5 md:top-4 text-gray-400 hover:text-[#a50034] transition-colors">
-                                                <Eye className="w-5 h-5" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword((prev) => !prev)}
+                                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                                className="absolute right-5 top-3.5 md:top-4 text-gray-400 hover:text-[#a50034] transition-colors"
+                                            >
+                                                {showPassword ? (
+                                                    <EyeOff className="w-5 h-5" />
+                                                ) : (
+                                                    <Eye className="w-5 h-5" />
+                                                )}
                                             </button>
                                         </div>
 
