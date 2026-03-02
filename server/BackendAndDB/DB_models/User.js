@@ -9,12 +9,19 @@ const userSchema = new mongoose.Schema({
   // UPDATED: 'HOD' removed, 'Admin' added.
   role: {
     type: String,
-    enum: ['Admin', 'Faculty'],
+    enum: ['Admin', 'Faculty', 'LabAssistant'],
     default: 'Faculty'
   },
 
   avatar: { type: String }, // URL for profile picture
   department: { type: String, required: true }, // e.g., "CSE"
+
+  // Mentor: Which section does this faculty mentor?
+  mentorSection: { type: mongoose.Schema.Types.ObjectId, ref: 'Section', default: null },
+
+  // Is this a CIR-only teacher?
+  isCirOnly: { type: Boolean, default: false },
+  cirSubType: { type: String, enum: ['Verbal', 'Technical', 'Aptitude'], default: null },
 
   // --- Faculty Constraints (For GA) ---
   // Note: Admins might not need these, but we keep them in case an Admin is also a Professor.

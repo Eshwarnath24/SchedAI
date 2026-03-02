@@ -13,9 +13,10 @@ const scheduleSchema = new mongoose.Schema({
     course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
     faculty: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     room: { type: mongoose.Schema.Types.ObjectId, ref: 'Room' },
-    
+    labAssistant: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+
     // We store both Index (for logic) and Details (for UI speed)
-    slotIndex: { type: Number }, 
+    slotIndex: { type: Number },
     day: { type: String },
     startTime: { type: String },
     endTime: { type: String }

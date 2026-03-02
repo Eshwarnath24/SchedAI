@@ -175,6 +175,9 @@ exports.applySlotLeave = async (req, res) => {
 
 // 3. Get History
 // Separates 'Duty' (Slots) from 'Casual'/'Sick' (Full Day)
+// Export helper for unit testing
+exports.isValidDate = isValidDate;
+
 exports.getHistory = async (req, res) => {
     try {
         // If sorting not working in frontend, we sort here.

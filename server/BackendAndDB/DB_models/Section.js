@@ -6,7 +6,10 @@ const sectionSchema = new mongoose.Schema({
   department: { type: String, required: true },
   studentCount: { type: Number, required: true }, // GA Constraint
   requiresAccess: { type: Boolean, default: false }, // GA Constraint (needs Lift/Ground floor)
-  
+
+  // The faculty mentor for this section
+  mentor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+
   // The Curriculum: What courses must this section take?
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }]
 });

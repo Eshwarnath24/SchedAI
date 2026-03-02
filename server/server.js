@@ -3,8 +3,10 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-// Load config
-dotenv.config();
+const path = require('path');
+
+// Load config from BackendAndDB/.env
+dotenv.config({ path: path.join(__dirname, 'BackendAndDB', '.env') });
 
 const app = express();
 

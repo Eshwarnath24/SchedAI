@@ -130,6 +130,7 @@ const seedData = async () => {
           faculty: drFox._id,
           room: rooms[0]._id,
           day: 'Monday',
+          slotIndex: 1,
           startTime: '09:00',
           endTime: '10:00'
         },
@@ -139,6 +140,7 @@ const seedData = async () => {
           faculty: drFox._id,
           room: rooms[2]._id,
           day: 'Monday',
+          slotIndex: 5,
           startTime: '14:00',
           endTime: '17:00' // 3 hour block
         },
@@ -148,6 +150,7 @@ const seedData = async () => {
           faculty: drFox._id,
           room: rooms[1]._id,
           day: 'Tuesday',
+          slotIndex: 8,
           startTime: '10:00',
           endTime: '11:00'
         },
@@ -157,6 +160,7 @@ const seedData = async () => {
           faculty: drFox._id,
           room: rooms[1]._id,
           day: 'Wednesday',
+          slotIndex: 14,
           startTime: '11:00',
           endTime: '12:00'
         }
