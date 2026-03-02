@@ -6,16 +6,16 @@ const bcrypt = require('bcryptjs');
 dotenv.config();
 
 // Load DB_models
-const User = require('./DB_models/User');
-const Room = require('./DB_models/Room');
-const Course = require('./DB_models/Course');
-const Section = require('./DB_models/Section');
-const TimeSlot = require('./DB_models/timeSlot');
-const Workload = require('./DB_models/workload');
-const LeaveRequest = require('./DB_models/leaveRequest');
-const Announcement = require('./DB_models/announcement');
-const Task = require('./DB_models/task');
-const Schedule = require('./DB_models/schedule');
+const User = require('./BackendAndDB/DB_models/User');
+const Room = require('./BackendAndDB/DB_models/Room');
+const Course = require('./BackendAndDB/DB_models/Course');
+const Section = require('./BackendAndDB/DB_models/Section');
+const TimeSlot = require('./BackendAndDB/DB_models/timeSlot');
+const Workload = require('./BackendAndDB/DB_models/workload');
+const LeaveRequest = require('./BackendAndDB/DB_models/leaveRequest');
+const Announcement = require('./BackendAndDB/DB_models/announcement');
+const Task = require('./BackendAndDB/DB_models/task');
+const Schedule = require('./BackendAndDB/DB_models/schedule');
 
 // Helper function to combine Date + Time string into a Date Object
 // (Needed to make Slot Unavailability work with your OLD Schema)
@@ -62,7 +62,8 @@ const seedData = async () => {
         avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
         maxLoad: 12,
         expertise: ['Data Structures', 'Algorithms'],
-        officeLocation: 'B-Block, 402'
+        officeLocation: 'B-Block, 402',
+        phoneNumber: '6380042652'  // Required for Faculty role
       },
       {
         name: 'Dr. Alice Smith',
@@ -175,20 +176,20 @@ const seedData = async () => {
     });
 
     // Announcements (Matches "Announcements" image)
+    // Note: priority enum is now uppercase (HIGH/MEDIUM/LOW).
+    // The pre-save hook auto-sets priorityWeight for sorting.
     await Announcement.insertMany([
       {
         title: 'Campus Closure Notice',
         message: 'Due to heavy rainfall, the campus will remain closed tomorrow.',
-        priority: 'High',
-        sender: 'Administration',
-        date: new Date('2024-03-14')
+        priority: 'HIGH',
+        sender: 'Administration'
       },
       {
         title: 'Mid-Semester Exam Schedule',
         message: 'The schedule for Semester 6 has been released.',
-        priority: 'Medium',
-        sender: 'Academic Office',
-        date: new Date('2024-03-12')
+        priority: 'MEDIUM',
+        sender: 'Academic Office'
       }
     ]);
 

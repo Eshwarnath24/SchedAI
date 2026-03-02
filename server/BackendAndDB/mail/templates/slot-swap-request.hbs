@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slot Swap Request</title>
+  <style>
+    body        { margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Arial, sans-serif; }
+    .wrapper    { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header     { background-color: #7c3aed; padding: 32px 40px; }
+    .header h1  { margin: 0; color: #ffffff; font-size: 22px; font-weight: 600; }
+    .header p   { margin: 6px 0 0; color: #ddd6fe; font-size: 14px; }
+    .body       { padding: 32px 40px; color: #374151; }
+    .body p     { margin: 0 0 16px; line-height: 1.6; font-size: 15px; }
+    .detail-box { background: #faf5ff; border-left: 4px solid #7c3aed; border-radius: 4px; padding: 16px 20px; margin: 24px 0; }
+    .detail-box table  { width: 100%; border-collapse: collapse; }
+    .detail-box td     { padding: 6px 0; font-size: 14px; color: #374151; vertical-align: top; }
+    .detail-box td:first-child { font-weight: 600; width: 180px; color: #5b21b6; }
+    .badge      { display: inline-block; background: #ede9fe; color: #5b21b6; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .footer     { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 40px; text-align: center; }
+    .footer p   { margin: 0; color: #9ca3af; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <div class="header">
+      <h1>SchedAI &nbsp;·&nbsp; Slot Swap Request</h1>
+      <p>A colleague has requested a slot swap with you &nbsp;<span class="badge">Action Required</span></p>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────── -->
+    <div class="body">
+      <p>Dear Faculty,</p>
+      <p>
+        <strong>{{requestingFacultyName}}</strong> has sent you a slot swap request.
+        Please review the details below and respond at your earliest convenience.
+      </p>
+
+      <div class="detail-box">
+        <table>
+          <tr>
+            <td>Requested By</td>
+            <td>{{requestingFacultyName}}</td>
+          </tr>
+          <tr>
+            <td>Course</td>
+            <td>{{courseName}} ({{courseId}})</td>
+          </tr>
+          <tr>
+            <td>Their Current Slot</td>
+            <td>{{currentSlot}}</td>
+          </tr>
+          <tr>
+            <td>Proposed New Slot</td>
+            <td>{{proposedSlot}}</td>
+          </tr>
+        </table>
+      </div>
+
+      <p>
+        Log in to <strong>SchedAI</strong> to accept or decline this request.
+        If you have questions, please reach out to <strong>{{requestingFacultyName}}</strong> directly.
+      </p>
+      <p>Regards,<br/><strong>SchedAI Notification System</strong></p>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="footer">
+      <p>This is an automated message from SchedAI. Please do not reply to this email.</p>
+    </div>
+
+  </div>
+</body>
+</html>

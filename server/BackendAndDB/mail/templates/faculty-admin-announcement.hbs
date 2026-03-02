@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Announcement</title>
+  <style>
+    body        { margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Arial, sans-serif; }
+    .wrapper    { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header     { background-color: #0f172a; padding: 32px 40px; }
+    .header h1  { margin: 0; color: #ffffff; font-size: 22px; font-weight: 600; }
+    .header p   { margin: 6px 0 0; color: #94a3b8; font-size: 14px; }
+    .body       { padding: 32px 40px; color: #374151; }
+    .body p     { margin: 0 0 16px; line-height: 1.6; font-size: 15px; }
+    .message-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 18px 20px; margin: 20px 0; font-size: 15px; color: #1e293b; line-height: 1.7; }
+    .detail-box { background: #f1f5f9; border-left: 4px solid #0f172a; border-radius: 4px; padding: 14px 20px; margin: 20px 0; }
+    .detail-box table  { width: 100%; border-collapse: collapse; }
+    .detail-box td     { padding: 5px 0; font-size: 14px; color: #374151; vertical-align: top; }
+    .detail-box td:first-child { font-weight: 600; width: 120px; color: #0f172a; }
+    .badge      { display: inline-block; background: #e2e8f0; color: #0f172a; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .footer     { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 40px; text-align: center; }
+    .footer p   { margin: 0; color: #9ca3af; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <div class="header">
+      <h1>SchedAI &nbsp;·&nbsp; Admin Announcement</h1>
+      <p>Official notice from {{sender}} &nbsp;<span class="badge">Faculty Notice</span></p>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────── -->
+    <div class="body">
+      <p>Dear Faculty,</p>
+      <p>An announcement has been posted by <strong>{{sender}}</strong>:</p>
+
+      <div class="message-box">
+        <strong>{{title}}</strong><br/><br/>
+        {{message}}
+      </div>
+
+      {{#if showDetails}}
+      <div class="detail-box">
+        <table>
+          {{#if eventDate}}
+          <tr>
+            <td>Date</td>
+            <td>{{eventDate}}</td>
+          </tr>
+          {{/if}}
+          {{#if eventReason}}
+          <tr>
+            <td>Details</td>
+            <td>{{eventReason}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </div>
+      {{/if}}
+
+      <p>Please log in to <strong>SchedAI</strong> for further updates and to view all announcements.</p>
+      <p>Regards,<br/><strong>SchedAI Notification System</strong></p>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="footer">
+      <p>This is an automated message from SchedAI. Please do not reply to this email.</p>
+    </div>
+
+  </div>
+</body>
+</html>

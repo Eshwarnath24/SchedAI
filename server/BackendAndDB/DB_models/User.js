@@ -34,7 +34,13 @@ const userSchema = new mongoose.Schema({
 
   // --- Dashboard Data ---
   officeLocation: { type: String },
-  phone: { type: String }
+  phone: { type: String },
+
+  // Added: Phone number required only for Faculty
+  phoneNumber: {
+    type: String,
+    required: function () { return this.role === 'Faculty'; }
+  }
 
 }, { timestamps: true });
 

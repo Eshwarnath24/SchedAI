@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Leave Notice</title>
+  <style>
+    body        { margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Arial, sans-serif; }
+    .wrapper    { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header     { background-color: #d97706; padding: 32px 40px; }
+    .header h1  { margin: 0; color: #ffffff; font-size: 22px; font-weight: 600; }
+    .header p   { margin: 6px 0 0; color: #fde68a; font-size: 14px; }
+    .body       { padding: 32px 40px; color: #374151; }
+    .body p     { margin: 0 0 16px; line-height: 1.6; font-size: 15px; }
+    .detail-box { background: #fffbeb; border-left: 4px solid #d97706; border-radius: 4px; padding: 16px 20px; margin: 24px 0; }
+    .detail-box table  { width: 100%; border-collapse: collapse; }
+    .detail-box td     { padding: 6px 0; font-size: 14px; color: #374151; vertical-align: top; }
+    .detail-box td:first-child { font-weight: 600; width: 140px; color: #92400e; }
+    .badge      { display: inline-block; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .note       { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 12px 16px; font-size: 14px; color: #9a3412; margin-top: 8px; }
+    .footer     { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 40px; text-align: center; }
+    .footer p   { margin: 0; color: #9ca3af; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <div class="header">
+      <h1>SchedAI &nbsp;·&nbsp; Faculty Leave Notice</h1>
+      <p>Your faculty will be on approved leave &nbsp;<span class="badge">Notice</span></p>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────── -->
+    <div class="body">
+      <p>Dear Student,</p>
+      <p>
+        Please be informed that <strong>{{facultyName}}</strong> has been granted approved leave
+        for the period listed below. Classes during this period may be rescheduled or
+        handled by an alternate faculty member.
+      </p>
+
+      <div class="detail-box">
+        <table>
+          <tr>
+            <td>Faculty</td>
+            <td>{{facultyName}}</td>
+          </tr>
+          <tr>
+            <td>Leave Type</td>
+            <td>{{leaveType}}</td>
+          </tr>
+          <tr>
+            <td>From Date</td>
+            <td>{{fromDate}}</td>
+          </tr>
+          <tr>
+            <td>To Date</td>
+            <td>{{toDate}}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="note">
+        ⚠️ &nbsp;Check SchedAI for any timetable updates or rescheduled classes during this period.
+      </div>
+
+      <p style="margin-top:24px;">Regards,<br/><strong>SchedAI Notification System</strong></p>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="footer">
+      <p>This is an automated message from SchedAI. Please do not reply to this email.</p>
+    </div>
+
+  </div>
+</body>
+</html>
