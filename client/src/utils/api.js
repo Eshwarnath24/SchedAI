@@ -123,3 +123,18 @@ export const fetchTimeSlots = async () => {
     if (!res.ok) throw new Error(`Failed to fetch time slots: ${res.statusText}`);
     return res.json();
 };
+
+// --- Dashboard APIs ---
+
+/**
+ * Fetch comprehensive dashboard data for a faculty member
+ * @param {string} facultyId - MongoDB ObjectId of the faculty
+ * @returns {Promise<Object>} Dashboard data including KPIs, workload, schedule, leaves, efficiency
+ */
+export const fetchFacultyDashboard = async (facultyId) => {
+    const res = await fetch(`${API_BASE}/dashboard/${facultyId}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch dashboard data: ${res.statusText}`);
+    return res.json();
+};
