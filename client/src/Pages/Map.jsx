@@ -6,6 +6,7 @@ import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import StudentSidebar from '../components/StudentSidebar';
 import { fetchCurrentAvailability } from '../utils/api';
+import AdminSidebar from '../components/AdminSidebar';
 
 const getCardStyles = (type) => {
     let bgClass, textClass, iconClass, StatusIcon;
@@ -113,6 +114,7 @@ const BalconyBox = ({ label = "Balcony", className = "", style = {} }) => (
 export default function Map() {
     const { userRole, logout } = useContext(AppContext);
     const isStudent = userRole === 'student';
+    const isAdmin = userRole === 'admin';
     const navigate = useNavigate();
 
     const [currentFloor, setCurrentFloor] = useState(0);
@@ -278,7 +280,7 @@ export default function Map() {
     return (
         <div className="flex h-screen bg-[#F4F6F9] font-sans text-slate-800 overflow-hidden">
 
-            {/* Mobile overlay for faculty sidebar */}
+            {/* Mobile overlay for faculty/admin sidebar */}
             {!isStudent && isSidebarOpen && (
                 <div
                     className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] lg:hidden"
@@ -294,12 +296,16 @@ export default function Map() {
                     fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-[1001] transition-transform duration-300 transform
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}>
-                    <Sidebar onClose={() => setIsSidebarOpen(false)} />
+                    {isAdmin ? (
+                        <AdminSidebar onClose={() => setIsSidebarOpen(false)} />
+                    ) : (
+                        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+                    )}
                 </aside>
             )}
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[#F4F6F9]">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F4F6F9] min-w-0">
 
                 {/* Mobile header toggle */}
                 <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0 sticky left-0 w-full z-[110]">
@@ -315,8 +321,8 @@ export default function Map() {
                     </button>
                 </header>
 
-                <div className="flex flex-col">
-                    <div className="sticky left-0 z-[110] w-[calc(100vw-2rem)] md:w-[calc(100vw-340px)] lg:w-[calc(100vw-360px)]">
+                <div className="flex flex-col min-w-0">
+                    <div className="sticky left-0 z-[110] w-full">
                         <div className="bg-white px-6 py-4 shadow-sm rounded-b-3xl mx-4 mt-4 border-b border-slate-100">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
                                 <div className="relative w-full md:w-96">
@@ -419,7 +425,7 @@ export default function Map() {
                     </div>
 
                     {/* MAP CANVAS */}
-                    <div className="p-6 relative">
+                    <div className="p-6 relative overflow-x-auto">
                         <div className="mx-auto w-[2250px]">
                             <div className="relative w-[2200px] h-[780px] bg-white border-[12px] border-slate-100 rounded-[3rem] shadow-sm p-4 overflow-visible">
 

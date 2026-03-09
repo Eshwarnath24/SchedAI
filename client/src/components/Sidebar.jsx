@@ -27,7 +27,7 @@ const Sidebar = ({ onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-slate-100 shadow-xl lg:shadow-none">
+    <div className="flex flex-col h-full overflow-y-auto bg-white border-r border-slate-100 shadow-xl lg:shadow-none">
       <div className="p-6 md:p-8">
         <div className="flex items-center justify-between mb-8 md:mb-10">
           <div className="flex items-center gap-3">

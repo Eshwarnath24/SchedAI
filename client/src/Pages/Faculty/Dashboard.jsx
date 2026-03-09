@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -22,15 +22,17 @@ import {
   Menu,
   X,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  Loader2
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import InfoBlock from '../../components/InfoBlock';
 import { SLOTS } from '../../utils/constants';
 import { AppContext } from '../../context/AppContext';
+import { fetchFacultyDashboard } from '../../utils/api';
 
 const Dashboard = () => {
-  const { events, currentTeacher, announcementsList } = useContext(AppContext);
+  const { events, currentTeacher, announcementsList, loggedInUser } = useContext(AppContext);
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState([
@@ -39,6 +41,44 @@ const Dashboard = () => {
     { id: 3, text: "CSE department head meeting", completed: false }
   ]);
   const [newTask, setNewTask] = useState("");
+  
+  // Dashboard data state
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState(null);
+
+  // Fetch dashboard data on component mount
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      // Use loggedInUser._id from AppContext if available
+      const facultyId = loggedInUser?._id;
+      
+      if (!facultyId) {
+        console.warn('[Dashboard] No faculty ID available yet');
+        setDashboardLoading(false);
+        return;
+      }
+
+      try {
+        setDashboardLoading(true);
+        const data = await fetchFacultyDashboard(facultyId);
+        
+        if (data.success) {
+          setDashboardData(data);
+          setDashboardError(null);
+        } else {
+          setDashboardError(data.error || 'Failed to load dashboard data');
+        }
+      } catch (error) {
+        console.error('[Dashboard] Error loading dashboard data:', error);
+        setDashboardError(error.message);
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [loggedInUser]);
 
   const addTask = (e) => {
     e.preventDefault();
@@ -59,32 +99,54 @@ const Dashboard = () => {
   const deleteTask = (id) => {
     setTasks(tasks.filter(t => t.id !== id));
   };
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const todaysEvents = (events && events[today]) || [];
 
+  // Use live dashboard data if available, otherwise fallback to context data
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const contextTodayEvents = (events && events[today]) || [];
+  const apiTodayEvents = dashboardData?.schedule?.today;
+  const hasContextTodayEvents = Array.isArray(contextTodayEvents) && contextTodayEvents.length > 0;
+  const hasApiTodayEvents = Array.isArray(apiTodayEvents) && apiTodayEvents.length > 0;
+  const todaysEvents = hasContextTodayEvents
+    ? contextTodayEvents
+    : (hasApiTodayEvents ? apiTodayEvents : []);
+  const usingApiSchedule = !hasContextTodayEvents && hasApiTodayEvents;
+
+  // Prepare schedule data from dashboard API or fallback to context
   let scheduleData = todaysEvents.map(event => {
-    const slot = SLOTS.find(s => s.id === event.slotId);
+    // Handle both API format and context format
+    const slot = SLOTS.find(s => s.id === (event.slotIndex || event.slotId));
     return {
-      time: slot ? slot.start : 'Unknown',
-      courseCode: event.code,
-      title: event.title,
-      location: event.room,
-      studentCount: event.studentCount,
-      isCancelled: !!event.isCancelled
+      time: event.startTime || (slot ? slot.start : 'Unknown'),
+      courseCode: event.courseCode || event.code,
+      title: event.courseName || event.title,
+      location: event.room || 'TBA',
+      studentCount: event.studentCount || 0,
+      isCancelled: !!event.isCancelled,
+      isUpcoming: event.isUpcoming !== undefined ? event.isUpcoming : true
     };
   });
 
-  // Filter to only upcoming classes (including cancelled ones for visibility)
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-  scheduleData = scheduleData.filter(item => {
-    const [hours, minutes] = item.time.split(':').map(Number);
-    const eventTime = hours * 60 + minutes;
-    return eventTime > currentTime;
-  });
+  // Filter to only upcoming classes if using dashboard data
+  if (usingApiSchedule && Array.isArray(dashboardData?.schedule?.upcoming) && dashboardData.schedule.upcoming.length > 0) {
+    scheduleData = scheduleData.filter(item => item.isUpcoming);
+  } else {
+    // Fallback: Filter by current time
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    scheduleData = scheduleData.filter(item => {
+      const [hours, minutes] = item.time.split(':').map(Number);
+      const eventTime = hours * 60 + minutes;
+      return eventTime > currentTime;
+    });
+  }
 
   // Count only non-cancelled upcoming classes
   const activeClassesCount = scheduleData.filter(item => !item.isCancelled).length;
+  
+  // Use live KPI data or fallback
+  const totalCourses = dashboardData?.kpis?.totalCourses || currentTeacher.totalCourses || 0;
+  const totalStudents = currentTeacher.totalStudents || 0;
+  const weeklyHours = dashboardData?.kpis?.weeklyHours || currentTeacher.weeklyHours || 0;
 
   // Get recent announcements for agenda (top 5)
   const recentAnnouncements = announcementsList
@@ -141,6 +203,29 @@ const Dashboard = () => {
           </button>
         </header>
 
+        {dashboardLoading && (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-[#8B0000] animate-spin mx-auto mb-4" />
+              <p className="text-slate-600 font-medium">Loading dashboard data...</p>
+            </div>
+          </div>
+        )}
+
+        {dashboardError && !dashboardLoading && (
+          <div className="p-4 m-8 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-red-600" size={24} />
+              <div>
+                <p className="font-bold text-red-800">Failed to load dashboard data</p>
+                <p className="text-sm text-red-600">{dashboardError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!dashboardLoading && (
+        <>
         <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
 
           <div className="flex flex-col xl:flex-row gap-8 mb-12">
@@ -178,7 +263,7 @@ const Dashboard = () => {
                     </div>
                     <div className="text-center sm:text-left">
                       <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">
-                        Good Morning, {currentTeacher.name.split(' ')[1]} Sir! 👋
+                        Good Morning, {currentTeacher.name.split(' ')[1]}! 👋
                       </h1>
                       <p className="text-slate-500 text-lg font-medium">
                         You have <span onClick={() => navigate('/time-table')} className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4 cursor-pointer hover:decoration-[#8B0000] transition-all">{activeClassesCount} classes</span> Now.
@@ -193,23 +278,23 @@ const Dashboard = () => {
                 <InfoBlock
                   icon={<BookOpen />}
                   label="Total Courses"
-                  value={String(currentTeacher.totalCourses).padStart(2, '0')}
+                  value={String(totalCourses).padStart(2, '0')}
                   className="border-r border-b border-slate-100"
                   iconColor="text-blue-500"
                 />
                 <InfoBlock
-                  icon={<Users />}
-                  label="Students"
-                  value={String(currentTeacher.totalStudents)}
+                  icon={<Clock />}
+                  label="Weekly Hours"
+                  value={String(weeklyHours).padStart(2, '0')}
                   className="border-b border-slate-100"
-                  iconColor="text-emerald-500"
+                  iconColor="text-amber-500"
                 />
                 <InfoBlock
-                  icon={<MapPinned />}
-                  label="Campus"
-                  value={currentTeacher.campus}
+                  icon={<Users />}
+                  label="Students"
+                  value={String(totalStudents)}
                   className="border-r border-slate-100"
-                  iconColor="text-red-500"
+                  iconColor="text-emerald-500"
                 />
                 <InfoBlock
                   icon={<Building2 />}
@@ -429,6 +514,8 @@ const Dashboard = () => {
             Amrita Vishwa Vidyapeetham • Ettimadai Campus • Academic Management
           </p>
         </footer>
+        </>
+        )}
       </main>
     </div>
   );

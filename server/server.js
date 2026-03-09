@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 
 const path = require('path');
 
-// Load config from BackendAndDB/.env
-dotenv.config({ path: path.join(__dirname, 'BackendAndDB', '.env') });
+// Load config from .env
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
