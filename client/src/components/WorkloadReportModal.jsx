@@ -94,8 +94,8 @@ const WorkloadReportModal = ({ isOpen, onClose, stats, chartData, entries, teach
                     <span className="w-2 h-2 rounded-full bg-rose-500"></span>
                     Weekly Progression
                 </h4>
-                <div className="h-64 w-full border border-slate-100 rounded-xl p-4 bg-slate-50/30">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-64 w-full min-w-0 border border-slate-100 rounded-xl p-4 bg-slate-50/30">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} dy={10} />

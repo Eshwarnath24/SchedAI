@@ -102,7 +102,14 @@ const Dashboard = () => {
 
   // Use live dashboard data if available, otherwise fallback to context data
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const todaysEvents = dashboardData?.schedule?.today || (events && events[today]) || [];
+  const contextTodayEvents = (events && events[today]) || [];
+  const apiTodayEvents = dashboardData?.schedule?.today;
+  const hasContextTodayEvents = Array.isArray(contextTodayEvents) && contextTodayEvents.length > 0;
+  const hasApiTodayEvents = Array.isArray(apiTodayEvents) && apiTodayEvents.length > 0;
+  const todaysEvents = hasContextTodayEvents
+    ? contextTodayEvents
+    : (hasApiTodayEvents ? apiTodayEvents : []);
+  const usingApiSchedule = !hasContextTodayEvents && hasApiTodayEvents;
 
   // Prepare schedule data from dashboard API or fallback to context
   let scheduleData = todaysEvents.map(event => {
@@ -120,7 +127,7 @@ const Dashboard = () => {
   });
 
   // Filter to only upcoming classes if using dashboard data
-  if (dashboardData?.schedule?.upcoming) {
+  if (usingApiSchedule && Array.isArray(dashboardData?.schedule?.upcoming) && dashboardData.schedule.upcoming.length > 0) {
     scheduleData = scheduleData.filter(item => item.isUpcoming);
   } else {
     // Fallback: Filter by current time
@@ -134,7 +141,7 @@ const Dashboard = () => {
   }
 
   // Count only non-cancelled upcoming classes
-  const activeClassesCount = dashboardData?.kpis?.activeClasses || scheduleData.filter(item => !item.isCancelled).length;
+  const activeClassesCount = scheduleData.filter(item => !item.isCancelled).length;
   
   // Use live KPI data or fallback
   const totalCourses = dashboardData?.kpis?.totalCourses || currentTeacher.totalCourses || 0;

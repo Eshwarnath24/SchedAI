@@ -1,20 +1,11 @@
-// Centralized API service for fetching timetable data from the backend.
-// Accepts either:
-// - VITE_API_BASE=https://your-render-service.onrender.com
-// - VITE_API_BASE=https://your-render-service.onrender.com/api
-// Falls back to '/api' for local dev with Vite proxy.
-const isTestMode = import.meta.env.MODE === 'test';
-const isLocalHost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
-const explicitApiBase = import.meta.env.VITE_API_BASE?.trim();
-const localApiBase = import.meta.env.VITE_API_BASE_LOCAL?.trim() || 'http://localhost:5000/api';
-const prodApiBase = import.meta.env.VITE_API_BASE_PROD?.trim() || 'https://schedai.onrender.com/api';
-const rawApiBase = isTestMode
-    ? '/api'
-    : (explicitApiBase || (isLocalHost ? localApiBase : prodApiBase));
-const strippedApiBase = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '/api';
-const API_BASE = strippedApiBase.endsWith('/api')
-    ? strippedApiBase
-    : `${strippedApiBase}/api`;
+import { SLOTS } from './constants';
+
+// Centralized API service for fetching timetable data from the backend
+const API_BASE = (
+    import.meta.env.MODE === 'test'
+        ? '/api'
+        : (import.meta.env.VITE_API_BASE || '/api')
+).replace(/\/+$/, '');
 
 // --- Token helpers ---
 const TOKEN_KEY = 'schedai_jwt_token';
@@ -147,9 +138,78 @@ export const fetchTimeSlots = async () => {
  * @returns {Promise<Object>} Dashboard data including KPIs, workload, schedule, leaves, efficiency
  */
 export const fetchFacultyDashboard = async (facultyId) => {
-    const res = await fetch(`${API_BASE}/dashboard/${facultyId}`, {
-        headers: { ...getAuthHeaders() },
+    const headers = { ...getAuthHeaders() };
+
+    const [reportResult, teacherScheduleResult] = await Promise.allSettled([
+        fetch(`${API_BASE}/reports/${facultyId}`, { headers }),
+        fetch(`${API_BASE}/schedule/teacher/${facultyId}`, { headers }),
+    ]);
+
+    if (reportResult.status === 'rejected' && teacherScheduleResult.status === 'rejected') {
+        throw new Error('Failed to load dashboard data');
+    }
+
+    let reportData = null;
+    if (reportResult.status === 'fulfilled' && reportResult.value.ok) {
+        reportData = await reportResult.value.json();
+    }
+
+    let teacherScheduleGrid = {};
+    if (teacherScheduleResult.status === 'fulfilled' && teacherScheduleResult.value.ok) {
+        const scheduleData = await teacherScheduleResult.value.json();
+        teacherScheduleGrid = scheduleData?.schedule || {};
+    }
+
+    const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const todaySlots = teacherScheduleGrid?.[todayName] || teacherScheduleGrid?.[todayName.toUpperCase()] || {};
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const todayClasses = Object.entries(todaySlots)
+        .map(([slotId, cls]) => {
+            const slotNum = Number(slotId);
+            const slotMeta = SLOTS.find((s) => s.id === slotNum);
+            const startTime = slotMeta?.start || '00:00';
+            const [h, m] = startTime.split(':').map(Number);
+            const slotMinutes = h * 60 + m;
+
+            return {
+                slotIndex: slotNum,
+                startTime,
+                courseCode: cls?.code || 'N/A',
+                courseName: cls?.name || 'Unknown',
+                room: cls?.room || 'TBA',
+                studentCount: cls?.studentCount || 0,
+                isCancelled: false,
+                isUpcoming: slotMinutes > currentMinutes,
+            };
+        })
+        .sort((a, b) => a.slotIndex - b.slotIndex);
+
+    const allCodes = new Set();
+    Object.values(teacherScheduleGrid || {}).forEach((daySlots) => {
+        Object.values(daySlots || {}).forEach((cls) => {
+            if (cls?.code) allCodes.add(cls.code);
+        });
     });
-    if (!res.ok) throw new Error(`Failed to fetch dashboard data: ${res.statusText}`);
-    return res.json();
+
+    const upcomingTodayClasses = todayClasses.filter((item) => item.isUpcoming && !item.isCancelled);
+
+    return {
+        success: true,
+        kpis: {
+            totalCourses: allCodes.size || reportData?.inventory?.length || 0,
+            weeklyHours: Number(reportData?.workloadStats?.totalWorkingHours || 0),
+            activeClasses: upcomingTodayClasses.length,
+        },
+        facultyDetails: reportData?.facultyDetails || null,
+        workloadStats: reportData?.workloadStats || null,
+        inventory: reportData?.inventory || [],
+        engagementCurve: reportData?.engagementCurve || { labels: [], data: [] },
+        schedule: {
+            today: todayClasses,
+            upcoming: upcomingTodayClasses,
+        },
+    };
 };

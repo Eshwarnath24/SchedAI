@@ -145,7 +145,7 @@ export default function WorkloadPage() {
         <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </aside>
 
-      <main className="flex-1 overflow-y-auto w-full relative print:overflow-visible print:h-auto">
+      <main className="flex-1 min-w-0 overflow-y-auto w-full relative print:overflow-visible print:h-auto">
         <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 print:hidden">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">
@@ -286,7 +286,7 @@ export default function WorkloadPage() {
             />
           </div>
 
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 sm:p-6 md:p-8">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 sm:p-6 md:p-8 min-w-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-800">
@@ -313,8 +313,8 @@ export default function WorkloadPage() {
               </div>
             </div>
 
-            <div className="h-[300px] sm:h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[300px] sm:h-[400px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
