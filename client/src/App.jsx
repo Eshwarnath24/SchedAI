@@ -51,7 +51,7 @@ const App = () => {
       <Route path="/student/teachers-timetable" element={isAuthenticated && userRole === 'student' ? <TeachersTimeTable /> : <Navigate to="/auth" />} />
 
       {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={isAuthenticated && userRole === 'admin' ? <AdminDashboard /> : <Navigate to="/auth" />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
       {/* Faculty Routes */}
       <Route path="/time-table" element={isAuthenticated ? <TimeTable /> : <Navigate to="/auth" />} />

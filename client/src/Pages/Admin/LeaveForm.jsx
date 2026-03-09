@@ -66,7 +66,7 @@ const LeaveForm = () => {
           <div style={styles.breadcrumbs}>
             <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>Home</a>
             <span>&gt;</span>
-            <span style={{ color: '#d32f2f', fontWeight: '600' }}>Leave Requests</span>
+            <span style={{ color: '#9b1c31', fontWeight: '600' }}>Leave Requests</span>
           </div>
         </div>
         <div style={styles.userProfile}>
@@ -183,7 +183,7 @@ const LeaveForm = () => {
       </div>
 
       {/* Table Section */}
-      <div style={styles.tableContainer}>
+      <div style={styles.tableContainer} className="no-scrollbar">
         <table style={styles.table}>
           <thead style={styles.thead}>
             <tr>
@@ -221,8 +221,8 @@ const LeaveForm = () => {
                       ...styles.td,
                       color:
                         item.type === 'Sick Leave' || item.type === 'Maternity Leave'
-                          ? '#d32f2f'
-                          : '#2e7d32',
+                          ? '#9b1c31'
+                          : '#047857',
                       fontWeight: '500',
                     }}
                   >
@@ -268,7 +268,7 @@ const LeaveForm = () => {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button style={styles.btnTable}><ChevronsLeft size={16} /></button>
             <button style={styles.btnTable}><ChevronLeft size={16} /></button>
-            <button style={{ ...styles.btnTable, background: '#d32f2f', color: 'white' }}>1</button>
+            <button style={{ ...styles.btnTable, background: '#9b1c31', color: 'white' }}>1</button>
             <button style={styles.btnTable}>2</button>
             <button style={styles.btnTable}>3</button>
             <button style={styles.btnTable}><ChevronRight size={16} /></button>
@@ -290,8 +290,8 @@ const LeaveForm = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Leaves Taken" stroke="#ffc107" strokeWidth={2} />
-              <Line type="monotone" dataKey="Approvals" stroke="#2e7d32" strokeDasharray="5 5" strokeWidth={2} />
+              <Line type="monotone" dataKey="Leaves Taken" stroke="#ffcc00" strokeWidth={2} />
+              <Line type="monotone" dataKey="Approvals" stroke="#047857" strokeDasharray="5 5" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -320,26 +320,16 @@ const LeaveForm = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Pending Requests */}
-        <div style={styles.reportCard}>
-          <h3 style={styles.reportTitle}>Pending Requests</h3>
-          <ul style={styles.pendingList}>
-            {pendingRequests.map((item, idx) => (
-              <li key={idx} style={styles.pendingListItem}>
-                • {item.dept} - <span style={{ fontWeight: '700', color: '#d32f2f' }}>{item.count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+
 
         {/* Download Report */}
         <div style={styles.reportCard}>
           <h3 style={styles.reportTitle}>Download Report</h3>
           <div style={styles.downloadReport}>
-            <button style={{ ...styles.btnDownload, color: '#2e7d32', borderColor: '#2e7d32' }}>
+            <button style={{ ...styles.btnDownload, color: '#047857', borderColor: '#047857' }}>
               <FileSpreadsheet size={18} /> Excel
             </button>
-            <button style={{ ...styles.btnDownload, color: '#d32f2f', borderColor: '#d32f2f' }}>
+            <button style={{ ...styles.btnDownload, color: '#9b1c31', borderColor: '#9b1c31' }}>
               <FileText size={18} /> PDF
             </button>
           </div>
