@@ -35,4 +35,15 @@ const studentOnly = (req, res, next) => {
     next();
 };
 
-module.exports = { protect, studentOnly };
+/**
+ * Middleware: Ensure the authenticated user is an Admin.
+ * Must be used AFTER the `protect` middleware.
+ */
+const adminOnly = (req, res, next) => {
+    if (!req.user || req.user.role !== 'Admin') {
+        return res.status(403).json({ error: 'Access denied. Admins only.' });
+    }
+    next();
+};
+
+module.exports = { protect, studentOnly, adminOnly };

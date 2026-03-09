@@ -123,3 +123,44 @@ export const fetchTimeSlots = async () => {
     if (!res.ok) throw new Error(`Failed to fetch time slots: ${res.statusText}`);
     return res.json();
 };
+
+// --- Availability API ---
+
+export const fetchCurrentAvailability = async () => {
+    const res = await fetch(`${API_BASE}/schedule/availability`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch availability: ${res.statusText}`);
+    return res.json();
+};
+
+// --- Schedule Override APIs ---
+
+export const createScheduleOverride = async (data) => {
+    const res = await fetch(`${API_BASE}/schedule/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to create schedule override');
+    return result;
+};
+
+export const deleteScheduleOverride = async (overrideId) => {
+    const res = await fetch(`${API_BASE}/schedule/override/${overrideId}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to delete schedule override');
+    return result;
+};
+
+export const fetchScheduleOverrides = async (sectionId) => {
+    const res = await fetch(`${API_BASE}/schedule/overrides/section/${sectionId}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch overrides: ${res.statusText}`);
+    return res.json();
+};

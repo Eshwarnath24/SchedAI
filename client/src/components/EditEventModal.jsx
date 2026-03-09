@@ -43,8 +43,8 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onM
           <div>
             <h3 className="text-2xl font-black tracking-tight">{isCancelled ? 'Cancelled Class' : 'Manage Class'}</h3>
             <div className="flex items-center gap-2 mt-2">
-               <span className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-bold uppercase tracking-widest">{event.code}</span>
-               <p className="text-xs font-bold opacity-80 uppercase tracking-widest">{day} • Slot {slotId}</p>
+              <span className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-bold uppercase tracking-widest">{event.code}</span>
+              <p className="text-xs font-bold opacity-80 uppercase tracking-widest">{day} • Slot {slotId}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors"><X size={24} /></button>
@@ -55,11 +55,10 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onM
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <div className="text-[10px] font-black uppercase text-slate-400 mb-2">Current Status</div>
             <div className="flex items-center gap-2">
-              <div className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase ${
-                isCompleted ? 'bg-green-100 text-green-800' :
-                isCancelled ? 'bg-red-100 text-red-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
+              <div className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase ${isCompleted ? 'bg-green-100 text-green-800' :
+                  isCancelled ? 'bg-red-100 text-red-800' :
+                    'bg-blue-100 text-blue-800'
+                }`}>
                 {isCompleted ? '✓ Completed' : isCancelled ? '✗ Cancelled' : '○ Scheduled'}
               </div>
             </div>
@@ -76,10 +75,10 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onM
             <div className="space-y-2">
               {!isCancelled && (
                 <button
-                  onClick={() => onMarkCancelled(event.id, day, formData.scope)}
+                  onClick={() => onMarkCancelled(event.id, day)}
                   className="w-full flex items-center justify-center gap-2 bg-red-600 py-4 rounded-2xl text-xs font-black uppercase text-white shadow-lg shadow-red-900/20 hover:scale-[1.02] active:scale-95 transition-all"
                 >
-                  <Trash2 size={14} /> Mark as Cancelled
+                  <Trash2 size={14} /> Cancel Class (Today Only)
                 </button>
               )}
               {(isCancelled || isCompleted) && (
@@ -96,29 +95,31 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onM
           {/* Reschedule Section - Only for non-completed classes */}
           {!isCompleted && (
             <>
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">Update Scope</label>
-                <div className="flex bg-slate-100 p-1.5 rounded-2xl">
-                  {['Today', 'Complete Sem'].map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setFormData({ ...formData, scope: s })}
-                      className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${formData.scope === s ? 'bg-white shadow-sm text-[#8B0000]' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="space-y-4">
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1">Reschedule (Shift Class)</label>
+
+                {/* Scope picker — only for reschedule */}
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 ml-1 uppercase">Reschedule Scope</span>
+                  <div className="flex bg-slate-100 p-1.5 rounded-2xl mt-1">
+                    {['Today', 'Complete Sem'].map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setFormData({ ...formData, scope: s })}
+                        className={`flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${formData.scope === s ? 'bg-white shadow-sm text-[#8B0000]' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <span className="text-[9px] font-bold text-slate-400 ml-1 uppercase">Target Day</span>
-                    <select 
+                    <select
                       value={formData.newDay}
-                      onChange={e => setFormData({...formData, newDay: e.target.value})}
+                      onChange={e => setFormData({ ...formData, newDay: e.target.value })}
                       className="w-full px-4 py-4 bg-slate-50 border-2 border-transparent focus:border-[#8B0000]/10 focus:bg-white rounded-2xl text-sm font-bold outline-none appearance-none transition-all"
                     >
                       <option value="" disabled>Select Day</option>
@@ -127,9 +128,9 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onM
                   </div>
                   <div className="space-y-1">
                     <span className="text-[9px] font-bold text-slate-400 ml-1 uppercase">Target Slot</span>
-                    <select 
+                    <select
                       value={formData.newSlotId}
-                      onChange={e => setFormData({...formData, newSlotId: parseInt(e.target.value)})}
+                      onChange={e => setFormData({ ...formData, newSlotId: parseInt(e.target.value) })}
                       className="w-full px-4 py-4 bg-slate-50 border-2 border-transparent focus:border-[#8B0000]/10 focus:bg-white rounded-2xl text-sm font-bold outline-none appearance-none transition-all"
                     >
                       <option value="" disabled>Select Slot</option>
@@ -137,7 +138,7 @@ export const EditEventModal = ({ isOpen, onClose, onUpdate, onMarkCancelled, onM
                     </select>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => onUpdate(event.id, day, formData)}
                   className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:scale-[1.01] active:scale-95 transition-all"
                 >

@@ -42,7 +42,7 @@ const AuthPage = () => {
         }
     };
 
-    const identifierLabel = currentRole === 'student' ? 'Roll Number' : 'Teacher ID';
+    const identifierLabel = currentRole === 'student' ? 'Roll Number' : currentRole === 'admin' ? 'Admin Email' : 'Teacher ID';
 
     const showToastNotification = (title, message, type = 'success') => {
         setToastMessage({ title, message });
@@ -96,7 +96,8 @@ const AuthPage = () => {
             studentDetails = parsed;
         }
 
-        const fullEmail = `${normalizedIdentifier}${getEmailDomain()}`;
+        // Admin types full email directly; others get domain suffix appended
+        const fullEmail = currentRole === 'admin' ? trimmedId : `${normalizedIdentifier}${getEmailDomain()}`;
         const loginResult = await login(fullEmail, password, currentRole, normalizedIdentifier, studentDetails);
 
         if (!loginResult?.success) {
@@ -309,13 +310,15 @@ const AuthPage = () => {
                                                     type="text"
                                                     value={userId}
                                                     onChange={(e) => setUserId(e.target.value)}
-                                                    className="peer w-full bg-gray-50 border border-gray-200 rounded-xl pl-5 pr-[220px] py-3.5 md:py-4 text-base text-gray-900 outline-none focus:border-[#a50034] focus:ring-1 focus:ring-[#a50034]/20 transition-all placeholder-transparent"
+                                                    className={`peer w-full bg-gray-50 border border-gray-200 rounded-xl pl-5 ${currentRole === 'admin' ? 'pr-5' : 'pr-[220px]'} py-3.5 md:py-4 text-base text-gray-900 outline-none focus:border-[#a50034] focus:ring-1 focus:ring-[#a50034]/20 transition-all placeholder-transparent`}
                                                     placeholder={identifierLabel}
                                                     required
                                                 />
-                                                <span className="absolute right-5 top-3.5 md:top-4 text-gray-400 text-sm font-medium pointer-events-none">
-                                                    {getEmailDomain()}
-                                                </span>
+                                                {currentRole !== 'admin' && (
+                                                    <span className="absolute right-5 top-3.5 md:top-4 text-gray-400 text-sm font-medium pointer-events-none">
+                                                        {getEmailDomain()}
+                                                    </span>
+                                                )}
                                                 <label className="absolute left-5 top-3.5 md:top-4 text-gray-400 text-sm transition-all pointer-events-none peer-placeholder-shown:text-base peer-focus:text-xs peer-focus:-translate-y-2.5 peer-focus:text-[#a50034] peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:-translate-y-6 bg-white px-1 peer-[:not(:placeholder-shown)]:text-[#a50034]">
                                                     {identifierLabel}
                                                 </label>

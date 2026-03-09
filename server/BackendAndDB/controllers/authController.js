@@ -49,7 +49,7 @@ const parseStudentRollNumber = (input) => {
         batchYear,
         sectionIndex,
         sectionLetter,
-        sectionName: `${branch} ${sectionLetter}`,
+        sectionName: `${branch}-${sectionLetter}`,
         studentNumber: uniqueCode,
     };
 };

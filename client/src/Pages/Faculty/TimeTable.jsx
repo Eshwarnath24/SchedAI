@@ -13,6 +13,7 @@ import {
   markClassAsScheduled,
   shiftClassInTimetable,
 } from "../../utils/timetableData";
+import { createScheduleOverride, deleteScheduleOverride } from "../../utils/api";
 
 export default function TimetablePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function TimetablePage() {
   const todayName = DAYS[currentTime.getDay() - 1] || (currentTime.getDay() === 6 ? "Saturday" : "");
   const [activeDay, setActiveDay] = useState(todayName || "Monday");
 
-  const { events, setEvents } = useContext(AppContext);
+  const { events, setEvents, loggedInUser } = useContext(AppContext);
   const [addModal, setAddModal] = useState({ isOpen: false, day: null, slotId: null });
   const [editModal, setEditModal] = useState({ isOpen: false, event: null, day: null, slotId: null });
 
@@ -69,17 +70,55 @@ export default function TimetablePage() {
     setAddModal({ isOpen: false, day: null, slotId: null });
   };
 
-  const handleMarkCancelled = (id, day, scope) => {
-    setEvents((prev) => markClassAsCancelled(prev, day, id, scope).events);
+  const handleMarkCancelled = async (id, day) => {
+    // Update local state immediately for responsiveness
+    setEvents((prev) => markClassAsCancelled(prev, day, id, 'Today').events);
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
+
+    // Persist to backend — cancel expires after the slot's end time
+    const event = editModal.event;
+    if (event && loggedInUser) {
+      // Find the slot's end time (e.g. "08:50")
+      const slot = SLOTS.find(s => s.id === event.slotId);
+      const slotEndTime = slot ? slot.end : null;
+
+      try {
+        await createScheduleOverride({
+          facultyId: loggedInUser._id,
+          sectionId: event.sectionId,
+          day,
+          slotIndex: event.slotId,
+          courseCode: event.code,
+          courseName: event.title || event.name,
+          type: 'CANCELLED',
+          scope: 'Today',
+          reason: 'Faculty cancelled',
+          slotEndTime, // Backend uses this for auto-expiry
+        });
+      } catch (err) {
+        console.warn('⚠️ Failed to persist cancel override:', err.message);
+      }
+    }
   };
 
-  const handleMarkScheduled = (id, day) => {
+  const handleMarkScheduled = async (id, day) => {
+    // Update local state immediately
     setEvents((prev) => markClassAsScheduled(prev, day, id).events);
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
+
+    // Remove override from backend
+    const event = editModal.event;
+    if (event && event.overrideId) {
+      try {
+        await deleteScheduleOverride(event.overrideId);
+      } catch (err) {
+        console.warn('⚠️ Failed to remove override:', err.message);
+      }
+    }
   };
 
-  const handleShiftEvent = (id, oldDay, data) => {
+  const handleShiftEvent = async (id, oldDay, data) => {
+    const event = editModal.event;
     setEvents((prev) => {
       const { events: next, error } = shiftClassInTimetable(prev, id, oldDay, data);
       if (error) {
@@ -89,6 +128,28 @@ export default function TimetablePage() {
       return next;
     });
     setEditModal({ isOpen: false, event: null, day: null, slotId: null });
+
+    // Persist reschedule to backend
+    if (event && loggedInUser) {
+      try {
+        await createScheduleOverride({
+          facultyId: loggedInUser._id,
+          sectionId: event.sectionId,
+          day: oldDay,
+          slotIndex: event.slotId,
+          courseCode: event.code,
+          courseName: event.title || event.name,
+          type: 'RESCHEDULED',
+          scope: data.scope || 'Today',
+          reason: 'Faculty rescheduled',
+          newDay: data.newDay,
+          newSlotIndex: data.newSlotId,
+          newRoom: data.room || event.room,
+        });
+      } catch (err) {
+        console.warn('⚠️ Failed to persist reschedule override:', err.message);
+      }
+    }
   };
 
   return (

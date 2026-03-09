@@ -66,7 +66,7 @@ const seedStudents = async () => {
 
         for (let sectionIdx = 0; sectionIdx < SECTION_LETTERS.length; sectionIdx++) {
             const sectionLetter = SECTION_LETTERS[sectionIdx];
-            const sectionName = `CSE ${sectionLetter}`;
+            const sectionName = `CSE-${sectionLetter}`;
 
             for (let studentNum = 1; studentNum <= STUDENTS_PER_SECTION; studentNum++) {
                 globalIndex++;

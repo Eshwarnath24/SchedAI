@@ -42,7 +42,7 @@ export const parseStudentRollNumber = (input) => {
         batchYear,
         sectionIndex,
         sectionLetter,
-        sectionName: `${branch} ${sectionLetter}`,
+        sectionName: `${branch}-${sectionLetter}`, // Match DB naming 'CSE-A' not 'CSE A'
         studentNumber: uniqueCode,
     };
 };
