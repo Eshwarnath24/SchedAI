@@ -1,5 +1,14 @@
-// Centralized API service for fetching timetable data from the backend
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://schedai.onrender.com/api';
+// Centralized API service for fetching timetable data from the backend.
+// Accepts either:
+// - VITE_API_BASE=https://your-render-service.onrender.com
+// - VITE_API_BASE=https://your-render-service.onrender.com/api
+// Falls back to '/api' for local dev with Vite proxy.
+const isTestMode = import.meta.env.MODE === 'test';
+const rawApiBase = isTestMode ? '/api' : import.meta.env.VITE_API_BASE?.trim();
+const strippedApiBase = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '/api';
+const API_BASE = strippedApiBase.endsWith('/api')
+    ? strippedApiBase
+    : `${strippedApiBase}/api`;
 
 // --- Token helpers ---
 const TOKEN_KEY = 'schedai_jwt_token';
