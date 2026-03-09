@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import {
     LayoutDashboard,
@@ -19,8 +19,13 @@ const AdminSidebar = ({ onClose }) => {
     const navigate = useNavigate();
     const { logout } = useContext(AppContext);
 
-    // Check if we passed a tab in state or use standard routing
-    const activeTab = location.state?.tab || (location.pathname.includes('leave') ? 'leave-form' : 'dashboard');
+    const activeTab = (() => {
+        if (location.pathname.includes('/admin/reports')) return 'reports';
+        if (location.pathname.includes('/map')) return 'map';
+        if (location.state?.tab) return location.state.tab;
+        if (location.pathname.includes('leave')) return 'leave-form';
+        return 'dashboard';
+    })();
 
     const handleLogout = () => {
         logout();
@@ -32,15 +37,15 @@ const AdminSidebar = ({ onClose }) => {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, action: () => navigate('/admin/dashboard', { state: { tab: 'dashboard' } }) },
         { id: 'timetable', label: 'Timetable', icon: Calendar, action: () => { } },
         { id: 'workload', label: 'Workload', icon: BarChart, action: () => { } },
-        { id: 'reports', label: 'Reports', icon: Activity, action: () => { } },
+        { id: 'reports', label: 'Reports', icon: Activity, action: () => navigate('/admin/reports') },
         { id: 'leave-form', label: 'Leave Form', icon: FileText, action: () => navigate('/admin/dashboard', { state: { tab: 'leave-form' } }) },
         { id: 'allocations', label: 'Allocations', icon: Users, action: () => { } },
         { id: 'announcements', label: 'Announcements', icon: Megaphone, action: () => { } },
-        { id: 'map', label: 'Map', icon: MapPin, action: () => { } }
+        { id: 'map', label: 'Map', icon: MapPin, action: () => navigate('/map') }
     ];
 
     return (
-        <div className="flex flex-col h-full bg-white border-r border-slate-100 shadow-xl lg:shadow-none font-sans">
+        <div className="flex flex-col h-full overflow-y-auto bg-white border-r border-slate-100 shadow-xl lg:shadow-none font-sans">
             <div className="p-6 md:p-8">
                 <div className="flex items-center justify-between mb-8 md:mb-10">
                     <div className="flex items-center gap-3">
