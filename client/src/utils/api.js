@@ -4,7 +4,13 @@
 // - VITE_API_BASE=https://your-render-service.onrender.com/api
 // Falls back to '/api' for local dev with Vite proxy.
 const isTestMode = import.meta.env.MODE === 'test';
-const rawApiBase = isTestMode ? '/api' : import.meta.env.VITE_API_BASE?.trim();
+const isLocalHost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const explicitApiBase = import.meta.env.VITE_API_BASE?.trim();
+const localApiBase = import.meta.env.VITE_API_BASE_LOCAL?.trim() || 'http://localhost:5000/api';
+const prodApiBase = import.meta.env.VITE_API_BASE_PROD?.trim() || 'https://schedai.onrender.com/api';
+const rawApiBase = isTestMode
+    ? '/api'
+    : (explicitApiBase || (isLocalHost ? localApiBase : prodApiBase));
 const strippedApiBase = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '/api';
 const API_BASE = strippedApiBase.endsWith('/api')
     ? strippedApiBase
@@ -130,5 +136,20 @@ export const fetchTimeSlots = async () => {
         headers: { ...getAuthHeaders() },
     });
     if (!res.ok) throw new Error(`Failed to fetch time slots: ${res.statusText}`);
+    return res.json();
+};
+
+// --- Dashboard APIs ---
+
+/**
+ * Fetch comprehensive dashboard data for a faculty member
+ * @param {string} facultyId - MongoDB ObjectId of the faculty
+ * @returns {Promise<Object>} Dashboard data including KPIs, workload, schedule, leaves, efficiency
+ */
+export const fetchFacultyDashboard = async (facultyId) => {
+    const res = await fetch(`${API_BASE}/dashboard/${facultyId}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch dashboard data: ${res.statusText}`);
     return res.json();
 };
