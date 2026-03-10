@@ -175,10 +175,42 @@ export const fetchScheduleOverrides = async (sectionId) => {
 
 /**
  * Fetch comprehensive dashboard data for a faculty member
+ * Uses the optimized aggregation service endpoint
  * @param {string} facultyId - MongoDB ObjectId of the faculty
  * @returns {Promise<Object>} Dashboard data including KPIs, workload, schedule, leaves, efficiency
  */
 export const fetchFacultyDashboard = async (facultyId) => {
+    try {
+        const headers = { ...getAuthHeaders() };
+        
+        // Call the unified dashboard API endpoint
+        const response = await fetch(`${API_BASE}/dashboard/${facultyId}`, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`Dashboard API returned ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load dashboard data');
+        }
+        
+        return data;
+        
+    } catch (error) {
+        console.error('[fetchFacultyDashboard] Error:', error);
+        
+        // Fallback: try legacy endpoints if new endpoint fails
+        return await fetchFacultyDashboardLegacy(facultyId);
+    }
+};
+
+/**
+ * Legacy dashboard data fetcher (fallback)
+ * Combines data from multiple endpoints for backward compatibility
+ */
+const fetchFacultyDashboardLegacy = async (facultyId) => {
     const headers = { ...getAuthHeaders() };
 
     const [reportResult, teacherScheduleResult] = await Promise.allSettled([
@@ -253,5 +285,41 @@ export const fetchFacultyDashboard = async (facultyId) => {
             upcoming: upcomingTodayClasses,
         },
     };
+};
+
+/**
+ * Fetch detailed workload report for faculty
+ * @param {string} facultyId - MongoDB ObjectId of the faculty
+ * @returns {Promise<Object>} Workload breakdown by course type and day
+ */
+export const fetchFacultyWorkloadReport = async (facultyId) => {
+    try {
+        const headers = { ...getAuthHeaders() };
+        const response = await fetch(`${API_BASE}/dashboard/${facultyId}`, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`Workload API returned ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load workload data');
+        }
+        
+        // Extract and format workload-specific data
+        return {
+            success: true,
+            totalHours: data.workload?.totalWeeklyHours || 0,
+            hoursByType: data.workload?.hoursByType || {},
+            courseBreakdown: data.workload?.courseBreakdown || [],
+            weeklyDistribution: data.workload?.weeklyDistribution || [],
+            efficiency: data.efficiency || {}
+        };
+        
+    } catch (error) {
+        console.error('[fetchFacultyWorkloadReport] Error:', error);
+        throw error;
+    }
 };
 

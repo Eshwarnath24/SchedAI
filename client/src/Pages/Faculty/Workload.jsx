@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useContext } from 'react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -8,12 +8,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Download, BookOpen, Clock, Briefcase, Calendar, UserCheck, Menu, Layout, Printer } from 'lucide-react';
+import { Download, BookOpen, Clock, Briefcase, Calendar, UserCheck, Menu, Layout, Printer, Loader2, AlertCircle } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import Sidebar from '../../components/Sidebar';
 import WorkloadReportModal from '../../components/WorkloadReportModal';
 import { buildFacultyActivityReport } from '../../utils/generateReports';
 import { buildCompletedEntries, buildChartData, calculateTotals } from '../../utils/workloadPageUtils';
+import { fetchFacultyWorkloadReport } from '../../utils/api';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -86,17 +87,53 @@ const StatCard = ({ icon: Icon, label, value, colorClass, iconColorClass }) => (
 // --- MAIN PAGE ---
 
 export default function WorkloadPage() {
-  const { events, currentTeacher } = useContext(AppContext);
+  const { events, currentTeacher, loggedInUser } = useContext(AppContext);
 
   const [academicYear, setAcademicYear] = useState('2025-2026');
   const [semester, setSemester] = useState('Odd');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  
+  // Real-time workload data state
+  const [workloadData, setWorkloadData] = useState(null);
+  const [workloadLoading, setWorkloadLoading] = useState(true);
+  const [workloadError, setWorkloadError] = useState(null);
 
   const teacherName = currentTeacher?.name || 'Faculty Member';
   const teacherDept = currentTeacher?.department || 'General Studies';
-  const teacherId = currentTeacher?.id || 'ID-000';
+  const teacherId = loggedInUser?._id || currentTeacher?.id || 'ID-000';
 
+  // Fetch real-time workload data
+  useEffect(() => {
+    const loadWorkloadData = async () => {
+      if (!loggedInUser?._id) {
+        console.warn('[Workload] No faculty ID available yet');
+        setWorkloadLoading(false);
+        return;
+      }
+
+      try {
+        setWorkloadLoading(true);
+        const data = await fetchFacultyWorkloadReport(loggedInUser._id);
+        
+        if (data.success) {
+          setWorkloadData(data);
+          setWorkloadError(null);
+        } else {
+          setWorkloadError('Failed to load workload data');
+        }
+      } catch (error) {
+        console.error('[Workload] Error loading workload data:', error);
+        setWorkloadError(error.message);
+      } finally {
+        setWorkloadLoading(false);
+      }
+    };
+
+    loadWorkloadData();
+  }, [loggedInUser]);
+
+  // Legacy data for fallback (kept for backward compatibility)
   const facultyReport = useMemo(() => {
     return buildFacultyActivityReport({
       facultyId: currentTeacher?.id || 'FAC-001',
@@ -112,15 +149,32 @@ export default function WorkloadPage() {
     [facultyReport]
   );
 
-  const chartData = useMemo(
-    () => buildChartData(facultyReport),
-    [facultyReport]
-  );
+  // Use real-time data if available, otherwise fallback to legacy
+  const chartData = useMemo(() => {
+    if (workloadData && workloadData.weeklyDistribution) {
+      // Map real-time data to chart format
+      return workloadData.weeklyDistribution.map(day => ({
+        day: day.dayShort,
+        Theory: 0, // Will be calculated from courses
+        Lab: 0,
+        CIR: 0
+      }));
+    }
+    return buildChartData(facultyReport);
+  }, [workloadData, facultyReport]);
 
-  const { totalTheory, totalLab, totalAdmin, totalHours } = useMemo(
-    () => calculateTotals(completedEntries),
-    [completedEntries]
-  );
+  // Calculate totals from real-time data or fallback
+  const { totalTheory, totalLab, totalAdmin, totalHours } = useMemo(() => {
+    if (workloadData && workloadData.hoursByType) {
+      return {
+        totalTheory: workloadData.hoursByType.Theory || 0,
+        totalLab: workloadData.hoursByType.Lab || 0,
+        totalAdmin: workloadData.hoursByType.CIR || 0,
+        totalHours: workloadData.totalHours || 0
+      };
+    }
+    return calculateTotals(completedEntries);
+  }, [workloadData, completedEntries]);
 
   return (
     <>
@@ -166,6 +220,29 @@ export default function WorkloadPage() {
           </button>
         </header>
 
+        {workloadLoading && (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-[#8B0000] animate-spin mx-auto mb-4" />
+              <p className="text-slate-600 font-medium">Loading workload data...</p>
+            </div>
+          </div>
+        )}
+
+        {workloadError && !workloadLoading && (
+          <div className="p-4 m-8 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-red-600" size={24} />
+              <div>
+                <p className="font-bold text-red-800">Failed to load workload data</p>
+                <p className="text-sm text-red-600">{workloadError}</p>
+                <p className="text-xs text-red-500 mt-2">Falling back to cached data...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!workloadLoading && (
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8">
             <div>
@@ -374,6 +451,7 @@ export default function WorkloadPage() {
             </div>
           </div>
         </div>
+        )}
 
         <footer className="bg-white border-t border-gray-100 py-6 sm:py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400 font-medium">

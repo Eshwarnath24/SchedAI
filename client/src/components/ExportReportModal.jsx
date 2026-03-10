@@ -56,10 +56,18 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
 
   const handleDownload = () => {
     setIsDownloading(true);
+    
+    // Small delay to show the loading state
     setTimeout(() => {
+      // Trigger browser print dialog (user can save as PDF)
+      window.print();
+      
       setIsDownloading(false);
-      onClose();
-    }, 2000);
+      // Don't close modal immediately after print
+      setTimeout(() => {
+        onClose();
+      }, 500);
+    }, 300);
   };
 
   const activityData = [
@@ -79,10 +87,32 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
   const attendancePercent = Math.round((report.totalCompletedHours / (report.totalTeachingHours || 1)) * 100);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-xl">
+    <>
+      {/* Print-specific styles */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .report-printable, .report-printable * {
+            visibility: visible;
+          }
+          .report-printable {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+      
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+          {/* Modal Header */}
+          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-xl no-print">
           <h3 className="text-lg font-bold text-slate-900">Comprehensive Report Preview</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 p-1 rounded-full hover:bg-slate-100">
             <X size={20} />
@@ -91,7 +121,7 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
         
         {/* Preview Container (Scrollable) */}
         <div className="flex-1 overflow-y-auto bg-slate-100 p-8">
-          <div className="bg-white shadow-sm border border-slate-200 p-10 min-h-[400px] mx-auto max-w-2xl">
+          <div className="bg-white shadow-sm border border-slate-200 p-10 min-h-[400px] mx-auto max-w-2xl report-printable">
             {/* Document Header */}
             <div className="text-center mb-8 border-b-2 border-slate-100 pb-6">
               <div className="w-12 h-12 bg-rose-900 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm mx-auto mb-3">A</div>
@@ -108,7 +138,6 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
               </div>
               <div className="text-right">
                 <p className="text-xs text-slate-500">Date: {new Date().toLocaleDateString()}</p>
-                <p className="text-xs text-slate-500">ID: {user?.id || 'FAC-2024-001'}</p>
               </div>
             </div>
 
@@ -314,7 +343,7 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-white rounded-b-xl flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-slate-100 bg-white rounded-b-xl flex justify-end gap-3 no-print">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-lg transition-colors"
@@ -339,6 +368,7 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
