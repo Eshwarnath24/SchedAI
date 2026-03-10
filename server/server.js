@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 
 const path = require('path');
 
-// Load config from BackendAndDB/.env
-dotenv.config({ path: path.join(__dirname, 'BackendAndDB', '.env') });
+// Load config from server/.env
+dotenv.config();
 
 const app = express();
 
@@ -20,6 +20,7 @@ const reportRoutes = require('./BackendAndDB/routes/reportRoutes');
 const scheduleRoutes = require('./BackendAndDB/routes/scheduleRoutes');
 const authRoutes = require('./BackendAndDB/routes/authRoutes');
 const announcementRoutes = require('./BackendAndDB/routes/announcementRoutes');
+const dashboardRoutes = require('./BackendAndDB/routes/dashboardRoutes');
 
 // Use Routes
 app.use('/api/leaves', leaveRoutes);
@@ -27,6 +28,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ── Notification Module ────────────────────────────────────────────────────────
 // Registers event listeners for class.cancelled and leave.approved.
