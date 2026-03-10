@@ -1,4 +1,7 @@
 const LeaveRequest = require('../DB_models/leaveRequest');
+const User = require('../DB_models/User');
+const eventEmitter = require('../notifications/eventEmitter');
+const LeaveApprovedEvent = require('../notifications/events/LeaveApprovedEvent');
 
 // =================================================================
 // HELPER FUNCTIONS
@@ -64,7 +67,13 @@ const checkOverlap = async (facultyId, newStart, newEnd) => {
 // Input: { facultyId, fromDate, toDate, message }
 exports.applyFullDayLeave = async (req, res) => {
     try {
-        const { facultyId, fromDate, toDate, message } = req.body;
+        // Use facultyId from body, or fall back to authenticated user
+        const facultyId = req.body.facultyId || (req.user && req.user.userId);
+        const { fromDate, toDate, message } = req.body;
+
+        if (!facultyId) {
+            return res.status(400).json({ success: false, error: "Faculty ID is required." });
+        }
 
         // A. VALIDATION: Strict Date Format
         if (!isValidDate(fromDate) || !isValidDate(toDate)) {
@@ -97,13 +106,17 @@ exports.applyFullDayLeave = async (req, res) => {
             return res.status(409).json({ success: false, error: "Conflict: You already have a leave or slot booked during this period." });
         }
 
+        // Determine leave type from body or default
+        const leaveTypeMap = { 'Casual Leave': 'Casual', 'Sick Leave': 'Sick', 'On Duty (OD)': 'Duty' };
+        const leaveType = leaveTypeMap[req.body.leaveType] || req.body.type || 'Casual';
+
         // F. SAVE
         const newLeave = new LeaveRequest({
             faculty: facultyId,
             fromDate: start,
             toDate: end,
-            reason: message,
-            type: 'Casual', // Default for full day
+            reason: message || req.body.reason,
+            type: leaveType,
             status: 'Pending'
         });
 
@@ -201,5 +214,111 @@ exports.getHistory = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// =================================================================
+// 4. ADMIN ENDPOINTS
+// =================================================================
+
+/**
+ * GET /api/leaves/all
+ * Admin: fetch all leave requests with faculty info, sorted newest first
+ */
+exports.getAllLeaves = async (req, res) => {
+    try {
+        const allLeaves = await LeaveRequest.find({})
+            .populate('faculty', 'name email department rank')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, leaves: allLeaves });
+    } catch (error) {
+        console.error("getAllLeaves Error:", error);
+        res.status(500).json({ success: false, error: "Failed to fetch leave requests" });
+    }
+};
+
+/**
+ * PATCH /api/leaves/:id/approve
+ * Admin: approve a pending leave request → emits leave.approved event for email
+ */
+exports.approveLeave = async (req, res) => {
+    try {
+        const leave = await LeaveRequest.findById(req.params.id);
+        if (!leave) {
+            return res.status(404).json({ success: false, error: "Leave request not found." });
+        }
+        if (leave.status !== 'Pending') {
+            return res.status(400).json({ success: false, error: `Cannot approve a request that is already ${leave.status}.` });
+        }
+
+        leave.status = 'Approved';
+        await leave.save();
+
+        // Fetch faculty details for email
+        const faculty = await User.findById(leave.faculty).select('name email');
+        if (faculty && faculty.email) {
+            const event = new LeaveApprovedEvent({
+                facultyEmail: faculty.email,
+                facultyName: faculty.name,
+                fromDate: leave.fromDate.toISOString().split('T')[0],
+                toDate: leave.toDate.toISOString().split('T')[0],
+                leaveType: leave.type,
+                reason: leave.reason || 'N/A',
+                studentEmails: [],
+            });
+            eventEmitter.emit(LeaveApprovedEvent.EVENT_NAME, event);
+        }
+
+        res.json({ success: true, message: 'Leave request approved.', data: leave });
+    } catch (error) {
+        console.error("approveLeave Error:", error);
+        res.status(500).json({ success: false, error: "Failed to approve leave request." });
+    }
+};
+
+/**
+ * PATCH /api/leaves/:id/reject
+ * Admin: reject a pending leave request → sends rejection email
+ */
+exports.rejectLeave = async (req, res) => {
+    try {
+        const leave = await LeaveRequest.findById(req.params.id);
+        if (!leave) {
+            return res.status(404).json({ success: false, error: "Leave request not found." });
+        }
+        if (leave.status !== 'Pending') {
+            return res.status(400).json({ success: false, error: `Cannot reject a request that is already ${leave.status}.` });
+        }
+
+        leave.status = 'Rejected';
+        await leave.save();
+
+        // Send rejection email
+        const faculty = await User.findById(leave.faculty).select('name email');
+        if (faculty && faculty.email) {
+            try {
+                const MailService = require('../mail/MailService');
+                await MailService.sendEmail({
+                    to: faculty.email,
+                    subject: `Your Leave Request Has Been Rejected — ${leave.fromDate.toISOString().split('T')[0]} to ${leave.toDate.toISOString().split('T')[0]}`,
+                    template: 'leave-rejected',
+                    context: {
+                        facultyName: faculty.name,
+                        leaveType: leave.type,
+                        fromDate: leave.fromDate.toISOString().split('T')[0],
+                        toDate: leave.toDate.toISOString().split('T')[0],
+                        reason: leave.reason || 'N/A',
+                    },
+                });
+            } catch (mailErr) {
+                console.error('[leaveController] Rejection email failed:', mailErr.message);
+            }
+        }
+
+        res.json({ success: true, message: 'Leave request rejected.', data: leave });
+    } catch (error) {
+        console.error("rejectLeave Error:", error);
+        res.status(500).json({ success: false, error: "Failed to reject leave request." });
     }
 };

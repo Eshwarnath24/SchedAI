@@ -204,6 +204,84 @@ export const fetchScheduleOverrides = async (sectionId) => {
     return res.json();
 };
 
+// --- Leave Request APIs ---
+
+export const applyLeaveApi = async (data) => {
+    const res = await fetch(`${API_BASE}/leaves/apply-full`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to apply for leave');
+    return result;
+};
+
+export const fetchLeaveHistory = async (facultyId) => {
+    const res = await fetch(`${API_BASE}/leaves/history/${facultyId}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error('Failed to fetch leave history');
+    return res.json();
+};
+
+export const fetchAllLeaves = async () => {
+    const res = await fetch(`${API_BASE}/leaves/all`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error('Failed to fetch leave requests');
+    return res.json();
+};
+
+export const approveLeaveApi = async (id) => {
+    const res = await fetch(`${API_BASE}/leaves/${id}/approve`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to approve leave');
+    return result;
+};
+
+export const rejectLeaveApi = async (id) => {
+    const res = await fetch(`${API_BASE}/leaves/${id}/reject`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to reject leave');
+    return result;
+};
+
+// --- Faculty Preference APIs ---
+
+export const fetchPreferenceCourses = async (cycle = 'odd') => {
+    const res = await fetch(`${API_BASE}/schedule/preferences/courses?cycle=${cycle}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch preference courses: ${res.statusText}`);
+    return res.json();
+};
+
+export const fetchMyPreferences = async (cycle = 'odd') => {
+    const res = await fetch(`${API_BASE}/schedule/preferences/my?cycle=${cycle}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch my preferences: ${res.statusText}`);
+    return res.json();
+};
+
+export const submitPreferences = async (data) => {
+    const res = await fetch(`${API_BASE}/schedule/preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to submit preferences');
+    return result;
+};
+
 // --- Dashboard APIs ---
 
 /**
@@ -450,4 +528,44 @@ export const deleteCourse = async (id) => {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Failed to delete course');
     return result;
+};
+
+// --- Admin Schedule Generation ---
+
+export const fetchPreferenceStatus = async (cycle = 'odd') => {
+    const res = await fetch(`${API_BASE}/schedule/preferences/status?cycle=${cycle}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error('Failed to fetch preference status');
+    return res.json();
+};
+
+export const triggerScheduleGeneration = async () => {
+    const res = await fetch(`${API_BASE}/schedule/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to generate timetable');
+    return result;
+};
+
+// Fetch all courses from DB (admin view — all semesters)
+export const fetchAllCoursesAdmin = async () => {
+    // Reuse the preference courses endpoint with 'odd' cycle to get semesters 1,3,5,7
+    // and 'even' for 2,4,6,8, then merge
+    const [oddRes, evenRes] = await Promise.all([
+        fetch(`${API_BASE}/schedule/preferences/courses?cycle=odd`, {
+            headers: { ...getAuthHeaders() },
+        }),
+        fetch(`${API_BASE}/schedule/preferences/courses?cycle=even`, {
+            headers: { ...getAuthHeaders() },
+        }),
+    ]);
+    if (!oddRes.ok) throw new Error('Failed to fetch odd-semester courses');
+    if (!evenRes.ok) throw new Error('Failed to fetch even-semester courses');
+    const oddData = await oddRes.json();
+    const evenData = await evenRes.json();
+    // Merge the two course maps
+    return { ...oddData.courses, ...evenData.courses };
 };

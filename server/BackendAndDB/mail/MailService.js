@@ -20,8 +20,8 @@
 
 const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
-const fs         = require('fs');
-const path       = require('path');
+const fs = require('fs');
+const path = require('path');
 
 // ─── Template directory ────────────────────────────────────────────────────────
 const TEMPLATE_DIR = path.join(__dirname, 'templates');
@@ -61,8 +61,8 @@ const getTransporter = () => {
     if (_transporter) return _transporter;
 
     _transporter = nodemailer.createTransport({
-        host:   process.env.MAIL_HOST || 'smtp.gmail.com',
-        port:   parseInt(process.env.MAIL_PORT || '587', 10),
+        host: process.env.MAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.MAIL_PORT || '587', 10),
         secure: process.env.MAIL_SECURE === 'true',   // true → port 465, false → STARTTLS
         auth: {
             user: process.env.MAIL_USER,
@@ -102,9 +102,17 @@ const sendEmail = async ({ to, subject, template, context }) => {
         const compiledTemplate = getCompiledTemplate(template);
         const html = compiledTemplate(context);
 
+        // If MAIL_OVERRIDE_TO is set, redirect ALL emails to that address (for testing)
+        const overrideTo = process.env.MAIL_OVERRIDE_TO;
+        const actualTo = overrideTo || (Array.isArray(to) ? to.join(', ') : to);
+
+        if (overrideTo) {
+            console.log(`[MailService] 📧 Override active — redirecting "${to}" → "${overrideTo}"`);
+        }
+
         const mailOptions = {
-            from:    process.env.MAIL_FROM || `"SchedAI" <${process.env.MAIL_USER}>`,
-            to:      Array.isArray(to) ? to.join(', ') : to,
+            from: process.env.MAIL_FROM || `"SchedAI" <${process.env.MAIL_USER}>`,
+            to: actualTo,
             subject,
             html,
         };
