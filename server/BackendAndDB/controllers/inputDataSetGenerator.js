@@ -154,7 +154,8 @@ const seedData = async () => {
         unavailableSlots: f.unavailable,
         preferredSlots: f.preferred_slots,
         expertise: f.expertise,
-        isCirOnly: false
+        isCirOnly: false,
+        phoneNumber: `9${f.id.replace('F-', '').padStart(9, '0')}`
       });
       facultyMap[f.id] = newUser._id;
     }
@@ -171,7 +172,8 @@ const seedData = async () => {
         rank: 'Assistant Prof',
         maxLoad: la.max_load,
         expertise: la.expertise,
-        isCirOnly: false
+        isCirOnly: false,
+        phoneNumber: `8${la.id.replace('LA-', '').padStart(9, '0')}`
       });
       facultyMap[la.id] = newUser._id;
     }
@@ -189,37 +191,52 @@ const seedData = async () => {
         maxLoad: cf.max_load,
         expertise: ['CIR'],
         isCirOnly: true,
-        cirSubType: cf.cirSubType
+        cirSubType: cf.cirSubType,
+        phoneNumber: `7${cf.id.replace('CIR-', '').padStart(9, '0')}`
       });
       facultyMap[cf.id] = newUser._id;
     }
     console.log(`   ✅ Created ${rawCirFaculty.length} CIR faculty`);
 
+    // 4d. Admin User (single admin with full access)
+    const adminUser = await User.create({
+      name: 'Admin',
+      email: 'admin@cse.cb.amrita',
+      password: await bcrypt.hash('admin123', salt),
+      role: 'Admin',
+      department: 'CSE',
+      phoneNumber: '9999999999'
+    });
+    console.log(`   ✅ Created Admin user (email: admin@cse.cb.amrita)`);
 
     // 5. CREATE COURSES
     console.log('📚 Creating Courses...');
     const rawCourses = [
-      // Theory Courses
-      { "id": "CS101", "name": "Intro to Programming", "duration": 1, "type": "Theory", "faculty_id": null },
-      { "id": "CS102", "name": "Digital Logic", "duration": 1, "type": "Theory", "faculty_id": null },
-      { "id": "CS103", "name": "C++ Lab", "duration": 2, "type": "Lab", "faculty_id": null, "lab_assistant": "LA-001" },
-      { "id": "CS201", "name": "Data Structures", "duration": 1, "type": "Theory", "faculty_id": "F-006" },
-      { "id": "CS202", "name": "OS Principles", "duration": 1, "type": "Theory", "faculty_id": "F-007" },
-      { "id": "CS203", "name": "OS Lab", "duration": 2, "type": "Lab", "faculty_id": "F-007", "lab_assistant": "LA-001" },
-      { "id": "CS204", "name": "Algorithms", "duration": 1, "type": "Theory", "faculty_id": "F-006" },
+      // Theory Courses (All semester 5 for Year 3 sections)
       { "id": "CS301", "name": "Artificial Intelligence", "duration": 1, "type": "Theory", "faculty_id": "F-001" },
       { "id": "CS302", "name": "Computer Networks", "duration": 1, "type": "Theory", "faculty_id": "F-002" },
       { "id": "CS303", "name": "Networks Lab", "duration": 2, "type": "Lab", "faculty_id": "F-002", "lab_assistant": "LA-002" },
       { "id": "CS304", "name": "Machine Learning", "duration": 1, "type": "Theory", "faculty_id": "F-001" },
       { "id": "CS305", "name": "ML Lab", "duration": 2, "type": "Lab", "faculty_id": "F-001", "lab_assistant": "LA-002" },
+      { "id": "CS306", "name": "Database Systems", "duration": 1, "type": "Theory", "faculty_id": "F-003" },
+      { "id": "CS307", "name": "DBMS Lab", "duration": 2, "type": "Lab", "faculty_id": "F-003", "lab_assistant": "LA-005" },
+      { "id": "CS308", "name": "Data Structures", "duration": 1, "type": "Theory", "faculty_id": "F-006" },
+      { "id": "CS309", "name": "Algorithms", "duration": 1, "type": "Theory", "faculty_id": "F-006" },
+      { "id": "CS310", "name": "OS Principles", "duration": 1, "type": "Theory", "faculty_id": "F-007" },
+      { "id": "CS311", "name": "OS Lab", "duration": 2, "type": "Lab", "faculty_id": "F-007", "lab_assistant": "LA-001" },
+      { "id": "CS312", "name": "Compiler Design", "duration": 1, "type": "Theory", "faculty_id": "F-008" },
+      { "id": "CS313", "name": "Compiler Lab", "duration": 2, "type": "Lab", "faculty_id": "F-008", "lab_assistant": "LA-003" },
+      { "id": "CS314", "name": "Software Engineering", "duration": 1, "type": "Theory", "faculty_id": "F-009" },
+      { "id": "CS315", "name": "Cloud Computing", "duration": 1, "type": "Theory", "faculty_id": "F-010" },
+      { "id": "CS316", "name": "Discrete Maths", "duration": 1, "type": "Theory", "faculty_id": "F-011" },
+      { "id": "CS317", "name": "Deep Learning", "duration": 1, "type": "Theory", "faculty_id": "F-014" },
+      { "id": "CS318", "name": "Cyber Security", "duration": 1, "type": "Theory", "faculty_id": "F-016" },
+      { "id": "CS319", "name": "Java Programming", "duration": 1, "type": "Theory", "faculty_id": "F-015" },
+      { "id": "CS320", "name": "Java Lab", "duration": 2, "type": "Lab", "faculty_id": "F-015", "lab_assistant": "LA-004" },
+      { "id": "CS321", "name": "System Design", "duration": 1, "type": "Theory", "faculty_id": "F-012" },
+      { "id": "CS322", "name": "Professional Ethics", "duration": 1, "type": "Theory", "faculty_id": "F-013" },
       { "id": "ELEC-1", "name": "Web Development", "duration": 1, "type": "Theory", "faculty_id": "F-004", "parallelGroup": "GRP_WEB_MOB" },
       { "id": "ELEC-2", "name": "Mobile Development", "duration": 1, "type": "Theory", "faculty_id": "F-005", "parallelGroup": "GRP_WEB_MOB" },
-      { "id": "CS401", "name": "Compiler Design", "duration": 1, "type": "Theory", "faculty_id": "F-008" },
-      { "id": "CS402", "name": "Compiler Lab", "duration": 2, "type": "Lab", "faculty_id": "F-008", "lab_assistant": "LA-003" },
-      { "id": "CS403", "name": "Project Phase 1", "duration": 3, "type": "Lab", "faculty_id": null, "lab_assistant": "LA-004" },
-      { "id": "MATH101", "name": "Calculus", "duration": 1, "type": "Theory", "faculty_id": null },
-      { "id": "ENG101", "name": "Comm English", "duration": 1, "type": "Theory", "faculty_id": null },
-      { "id": "ETHICS", "name": "Professional Ethics", "duration": 1, "type": "Theory", "faculty_id": null },
 
       // CIR Courses (3 continuous slots per section per week)
       { "id": "CIR-V", "name": "CIR Verbal", "duration": 1, "type": "CIR", "faculty_id": "CIR-001", "cirSubType": "Verbal" },
@@ -227,14 +244,11 @@ const seedData = async () => {
       { "id": "CIR-A", "name": "CIR Aptitude", "duration": 1, "type": "CIR", "faculty_id": "CIR-003", "cirSubType": "Aptitude" }
     ];
 
-    // Helper: Map "CS1xx" -> Semester Number
+    // Helper: All CS3xx and ELEC courses are semester 5 (Year 3)
     const getSem = (code) => {
-      if (code.startsWith('CS1') || code.startsWith('MATH') || code.startsWith('ENG')) return 1;
-      if (code.startsWith('CS2')) return 3;
       if (code.startsWith('CS3') || code.startsWith('ELEC')) return 5;
-      if (code.startsWith('CS4')) return 7;
-      if (code.startsWith('CIR') || code.startsWith('ETHICS')) return 0; // CIR is cross-semester
-      return 1;
+      if (code.startsWith('CIR')) return 0; // CIR is cross-semester
+      return 5; // Default: all courses assigned to semester 5
     };
 
     const courseMap = []; // To store created courses for Section linking

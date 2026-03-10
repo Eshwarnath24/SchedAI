@@ -1,5 +1,4 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
@@ -10,7 +9,6 @@ import {
   Download,
   Eye,
   Filter,
-  LogOut,
   MapPin,
   Menu,
   RefreshCw,
@@ -47,48 +45,6 @@ const Badge = ({ children, type }) => {
     </span>
   );
 };
-
-const Header = ({ onOpenSidebar, user, onLogout }) => (
-  <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onOpenSidebar}
-          className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors mr-2"
-        >
-          <Menu size={24} />
-        </button>
-        <div className="w-9 h-9 bg-rose-900 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          A
-        </div>
-        <h2 className="font-bold text-slate-900 text-lg leading-tight">Amrita Vishwa Vidyapeetham</h2>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <div className="hidden md:flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-          <img
-            src={
-              user?.profileImage ||
-              user?.image ||
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-            }
-            alt="Profile"
-            className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
-          />
-          <div className="pr-2 text-left">
-            <p className="text-sm font-bold text-slate-900 leading-none">{user?.name || 'Faculty Member'}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide leading-none mt-1">
-              {user?.designation || user?.role || 'Faculty'}
-            </p>
-          </div>
-        </div>
-        <button onClick={onLogout} className="text-slate-500 hover:text-rose-900 transition-colors">
-          <LogOut size={20} />
-        </button>
-      </div>
-    </div>
-  </header>
-);
 
 const ReportsPage = ({ user, events, announcementsList }) => {
   const [activeSubTab, setActiveSubTab] = useState('schedule');
@@ -457,14 +413,8 @@ const ReportsPage = ({ user, events, announcementsList }) => {
 };
 
 export default function Reports() {
-  const { currentTeacher, logout, events, announcementsList } = useContext(AppContext);
+  const { currentTeacher, events, announcementsList } = useContext(AppContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
-  };
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
@@ -486,11 +436,16 @@ export default function Reports() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <Header 
-          onOpenSidebar={() => setIsSidebarOpen(true)} 
-          user={currentTeacher} 
-          onLogout={handleLogout}
-        />
+        {/* Mobile Header Toggle */}
+        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
+            <span className="font-bold text-slate-800">Amrita</span>
+          </div>
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+            <Menu size={24} />
+          </button>
+        </header>
         
         <main className="flex-1 overflow-y-auto">
           <ReportsPage 

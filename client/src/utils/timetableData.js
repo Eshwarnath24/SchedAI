@@ -171,7 +171,11 @@ export const shiftClassInTimetable = (
   // Remove from old day
   sourceEvents.splice(eventIndex, 1);
 
-  const targetEvents = [...(events[newDay] || [])];
+  // When rescheduling within the same day, use the already-spliced source array
+  // to avoid duplicating the event (JS object keys: last assignment wins)
+  const targetEvents = oldDay === newDay
+    ? [...sourceEvents]
+    : [...(events[newDay] || [])];
   const updatedEvent = {
     ...movedEvent,
     slotId: newSlotId,
@@ -203,26 +207,26 @@ export const hasClassTimePassed = (day, slotId, currentTime = new Date()) => {
   // Get current day index (0 = Sunday, 1 = Monday, etc.)
   const currentDayIndex = currentTime.getDay();
   const currentDayName = DAYS[currentDayIndex - 1] || (currentDayIndex === 6 ? "Saturday" : null);
-  
+
   // Find the day index for the class
   const classDayIndex = DAYS.indexOf(day);
   if (classDayIndex === -1) return false;
-  
+
   // Find the slot
   const slot = SLOTS.find(s => s.id === slotId);
   if (!slot || slot.isBreak) return false;
-  
+
   // If class is on a future day this week, it hasn't happened
   if (classDayIndex > DAYS.indexOf(currentDayName)) return false;
-  
+
   // If class is on a past day this week, it has happened
   if (classDayIndex < DAYS.indexOf(currentDayName)) return true;
-  
+
   // Same day - check time
   const [endHour, endMinute] = slot.end.split(':').map(Number);
   const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
   const slotEndMinutes = endHour * 60 + endMinute;
-  
+
   return currentMinutes >= slotEndMinutes;
 };
 
@@ -235,7 +239,7 @@ export const hasClassTimePassed = (day, slotId, currentTime = new Date()) => {
 export const autoMarkCompletedClasses = (events, currentTime = new Date()) => {
   const updatedEvents = { ...events };
   let hasChanges = false;
-  
+
   Object.keys(updatedEvents).forEach(day => {
     const dayEvents = updatedEvents[day] || [];
     const updatedDayEvents = dayEvents.map(event => {
@@ -246,11 +250,11 @@ export const autoMarkCompletedClasses = (events, currentTime = new Date()) => {
       }
       return event;
     });
-    
+
     if (hasChanges) {
       updatedEvents[day] = updatedDayEvents;
     }
   });
-  
+
   return hasChanges ? updatedEvents : events;
 };

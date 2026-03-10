@@ -3,6 +3,7 @@ const User = require('../DB_models/User');
 const Section = require('../DB_models/Section');
 const Course = require('../DB_models/Course');
 const Room = require('../DB_models/Room');
+const { getActiveOverrides } = require('./scheduleOverrideController');
 const TimeSlot = require('../DB_models/timeSlot');
 
 // ==========================================
@@ -92,6 +93,62 @@ const getColorForType = (type) => {
 };
 
 // ==========================================
+// Helper: Merge active ScheduleOverrides into a built grid
+// ==========================================
+const mergeOverridesIntoGrid = (grid, overrides) => {
+    if (!overrides || overrides.length === 0) return;
+
+    overrides.forEach(ov => {
+        const slotKey = String(ov.slotIndex);
+        const dayKey = ov.day;
+        const upperDay = dayKey.toUpperCase();
+
+        if (ov.type === 'CANCELLED') {
+            [dayKey, upperDay].forEach(dk => {
+                if (grid[dk] && grid[dk][slotKey]) {
+                    grid[dk][slotKey] = {
+                        ...grid[dk][slotKey],
+                        status: 'CANCELLED',
+                        reason: ov.reason || 'Faculty unavailable',
+                        overrideId: ov._id.toString(),
+                    };
+                }
+            });
+        } else if (ov.type === 'RESCHEDULED') {
+            // Remove original slot entirely (class has moved)
+            [dayKey, upperDay].forEach(dk => {
+                if (grid[dk] && grid[dk][slotKey]) {
+                    delete grid[dk][slotKey];
+                }
+            });
+
+            // Add course to the new slot
+            if (ov.newDay && ov.newSlotIndex != null) {
+                const newSlotKey = String(ov.newSlotIndex);
+                const newDayUpper = ov.newDay.toUpperCase();
+
+                const rescheduledEntry = {
+                    code: ov.courseCode,
+                    name: ov.courseName,
+                    room: ov.newRoom || 'TBA',
+                    type: 'Theory',
+                    color: 'bg-purple-50 text-purple-700 border border-purple-200',
+                    faculty: ov.faculty ? ov.faculty.name : 'Unassigned',
+                    status: 'RESCHEDULED',
+                    reason: `Moved from ${dayKey} Slot ${slotKey}`,
+                    overrideId: ov._id.toString(),
+                };
+
+                [ov.newDay, newDayUpper].forEach(dk => {
+                    if (!grid[dk]) grid[dk] = {};
+                    grid[dk][newSlotKey] = rescheduledEntry;
+                });
+            }
+        }
+    });
+};
+
+// ==========================================
 // 1. GET /api/schedule/active
 //    Returns the full active schedule as a grid
 // ==========================================
@@ -149,6 +206,10 @@ const getTeacherSchedule = async (req, res) => {
 
         const grid = buildGrid(teacherClasses);
 
+        // --- Merge active overrides for this teacher ---
+        const overrides = await getActiveOverrides({ faculty: teacherId });
+        mergeOverridesIntoGrid(grid, overrides);
+
         // Get teacher info
         const teacher = await User.findById(teacherId).select('name email department rank role');
 
@@ -165,6 +226,7 @@ const getTeacherSchedule = async (req, res) => {
 // ==========================================
 // 3. GET /api/schedule/section/:sectionId
 //    Returns classes for a specific section as a grid
+//    Merges active ScheduleOverrides on top
 // ==========================================
 const getSectionSchedule = async (req, res) => {
     try {
@@ -185,6 +247,10 @@ const getSectionSchedule = async (req, res) => {
         );
 
         const grid = buildGrid(sectionClasses);
+
+        // --- Merge active overrides ---
+        const overrides = await getActiveOverrides({ section: sectionId });
+        mergeOverridesIntoGrid(grid, overrides);
 
         // Get section info with mentor populated
         const section = await Section.findById(sectionId).populate('mentor', 'name email department');
@@ -248,6 +314,157 @@ const getTimeSlots = async (req, res) => {
     }
 };
 
+// ==========================================
+// 7. GET /api/schedule/availability
+//    Returns free rooms and free faculty for the current time slot
+// ==========================================
+const getCurrentAvailability = async (req, res) => {
+    try {
+        const now = new Date();
+
+        // Determine current day name
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = dayNames[now.getDay()];
+
+        // Format current time as HH:MM
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        // Find the current time slot
+        const allSlots = await TimeSlot.find({ day: currentDay, isBreak: false }).sort({ slotIndex: 1 });
+        let currentSlot = null;
+        for (const slot of allSlots) {
+            if (currentTime >= slot.startTime && currentTime < slot.endTime) {
+                currentSlot = slot;
+                break;
+            }
+        }
+
+        // Get all rooms and all faculty
+        const allRooms = await Room.find({}).select('name building capacity type');
+        const allFaculty = await User.find({ role: 'Faculty' }).select('name department rank');
+
+        // If no current slot: weekend, before first class, or after last class
+        // → everything is UNAVAILABLE (campus closed / no classes running)
+        if (!currentSlot) {
+            // Check if we're between slots (e.g., during a break)
+            // If the current time is within the range of the day's teaching hours, look for the closest slot
+            const lastSlot = allSlots.length > 0 ? allSlots[allSlots.length - 1] : null;
+            const firstSlot = allSlots.length > 0 ? allSlots[0] : null;
+
+            // If between first and last slot times (break period), find what's occupied from adjacent slot
+            if (firstSlot && lastSlot && currentTime >= firstSlot.startTime && currentTime <= lastSlot.endTime) {
+                // We're in a break — find the next slot and show its status
+                let nextSlot = null;
+                for (const slot of allSlots) {
+                    if (slot.startTime > currentTime) {
+                        nextSlot = slot;
+                        break;
+                    }
+                }
+                // Use previous slot's occupancy if no next slot
+                const refSlot = nextSlot || lastSlot;
+
+                const schedule = await Schedule.findOne({ isActive: true })
+                    .populate('classes.room')
+                    .populate('classes.faculty');
+
+                if (schedule) {
+                    const occupiedClasses = schedule.classes.filter(cls =>
+                        cls.day === currentDay && cls.slotIndex === refSlot.slotIndex
+                    );
+                    const occupiedRoomIds = new Set();
+                    const occupiedFacultyIds = new Set();
+                    occupiedClasses.forEach(cls => {
+                        if (cls.room) occupiedRoomIds.add(cls.room._id.toString());
+                        if (cls.faculty) occupiedFacultyIds.add(cls.faculty._id.toString());
+                    });
+
+                    return res.json({
+                        currentDay,
+                        currentTime,
+                        currentSlot: { startTime: refSlot.startTime, endTime: refSlot.endTime },
+                        afterHours: false,
+                        freeRooms: allRooms.filter(r => !occupiedRoomIds.has(r._id.toString())),
+                        freeFaculty: allFaculty.filter(f => !occupiedFacultyIds.has(f._id.toString())),
+                        occupiedRoomNames: occupiedClasses.filter(c => c.room).map(c => c.room.name),
+                        occupiedFacultyNames: occupiedClasses.filter(c => c.faculty).map(c => c.faculty.name),
+                    });
+                }
+            }
+
+            // Outside teaching hours or weekend → everything unavailable
+            return res.json({
+                currentDay,
+                currentTime,
+                currentSlot: null,
+                afterHours: true,
+                freeRooms: [],
+                freeFaculty: [],
+                occupiedRoomNames: allRooms.map(r => r.name),
+                occupiedFacultyNames: allFaculty.map(f => f.name),
+            });
+        }
+
+        // Find the active schedule
+        const schedule = await Schedule.findOne({ isActive: true })
+            .populate('classes.room')
+            .populate('classes.faculty');
+
+        if (!schedule) {
+            return res.json({
+                currentDay,
+                currentTime,
+                currentSlot: { startTime: currentSlot.startTime, endTime: currentSlot.endTime },
+                afterHours: false,
+                freeRooms: allRooms,
+                freeFaculty: allFaculty,
+                occupiedRoomNames: [],
+                occupiedFacultyNames: [],
+            });
+        }
+
+        // Find classes happening in the current slot
+        const occupiedClasses = schedule.classes.filter(cls =>
+            cls.day === currentDay && cls.slotIndex === currentSlot.slotIndex
+        );
+
+        // Collect occupied room and faculty IDs
+        const occupiedRoomIds = new Set();
+        const occupiedFacultyIds = new Set();
+        const occupiedRoomNames = [];
+        const occupiedFacultyNames = [];
+
+        occupiedClasses.forEach(cls => {
+            if (cls.room) {
+                occupiedRoomIds.add(cls.room._id.toString());
+                occupiedRoomNames.push(cls.room.name);
+            }
+            if (cls.faculty) {
+                occupiedFacultyIds.add(cls.faculty._id.toString());
+                occupiedFacultyNames.push(cls.faculty.name);
+            }
+        });
+
+        // Filter to get free rooms and free faculty
+        const freeRooms = allRooms.filter(r => !occupiedRoomIds.has(r._id.toString()));
+        const freeFaculty = allFaculty.filter(f => !occupiedFacultyIds.has(f._id.toString()));
+
+        res.json({
+            currentDay,
+            currentTime,
+            currentSlot: { startTime: currentSlot.startTime, endTime: currentSlot.endTime },
+            afterHours: false,
+            freeRooms,
+            freeFaculty,
+            occupiedRoomNames,
+            occupiedFacultyNames,
+        });
+    } catch (err) {
+        console.error('❌ getCurrentAvailability error:', err);
+        res.status(500).json({ error: 'Server error fetching availability.' });
+    }
+};
+
 module.exports = {
     getActiveSchedule,
     getTeacherSchedule,
@@ -255,6 +472,7 @@ module.exports = {
     getAllSections,
     getAllTeachers,
     getTimeSlots,
+    getCurrentAvailability,
     // Exported for unit testing
     buildGrid,
     getColorForType

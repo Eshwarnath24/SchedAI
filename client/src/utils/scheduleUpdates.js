@@ -1,53 +1,46 @@
-// Mock updates data
-// In a real app, this would come from a database or API
+import { fetchScheduleOverrides } from './api';
 
-export const SCHEDULE_UPDATES = [
-    {
-      id: 1,
-      section: 'CSE A', 
-      day: 'MONDAY',
-      slotId: '1',
-      type: 'CANCELLED',
-      originalCourseCode: '23CSE312',
-      reason: 'Faculty Leave'
-    },
-    {
-      id: 2,
-      section: 'CSE A',
-      day: 'TUESDAY', // Today
-      slotId: '8', 
-      type: 'EXTRA',
-      course: { code: '23CSE314', name: 'Networks', room: 'A-201', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-      reason: 'Syllabus completion'
-    },
-    {
-        id: 3,
-        section: 'CSE A',
-        day: 'WEDNESDAY',
-        slotId: '3',
-        type: 'RESCHEDULED',
-        originalCourseCode: '23CSE313',
-        newCourse: { code: '23MAT301', name: 'Lin. Algebra', room: 'C-105', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-        reason: 'Swapped with Math'
-    },
-    {
-        id: 'u4',
-        section: 'CSE B',
-        day: 'THURSDAY',
-        slotId: '4',
-        type: 'CANCELLED',
-        reason: 'Technical Issue'
+// Fetch schedule updates (overrides) from backend
+export const getUpdatesForSection = async (sectionId) => {
+    if (!sectionId) return [];
+    try {
+        const data = await fetchScheduleOverrides(sectionId);
+        return (data.overrides || []).map(ov => ({
+            id: ov._id,
+            section: ov.section,
+            day: ov.day.toUpperCase(),
+            slotId: String(ov.slotIndex),
+            type: ov.type,
+            originalCourseCode: ov.courseCode,
+            courseCode: ov.courseCode,
+            reason: ov.reason,
+            // For RESCHEDULED entries
+            ...(ov.type === 'RESCHEDULED' ? {
+                newCourse: {
+                    code: ov.courseCode,
+                    name: ov.courseName,
+                    room: ov.newRoom || 'TBA',
+                    color: 'bg-purple-50 text-purple-700 border-purple-200',
+                },
+            } : {}),
+            // For CANCELLED entries
+            ...(ov.type === 'CANCELLED' ? {
+                course: {
+                    code: ov.courseCode,
+                    name: ov.courseName,
+                },
+            } : {}),
+        }));
+    } catch (err) {
+        console.warn('⚠️ Could not fetch schedule updates:', err.message);
+        return [];
     }
-];
-  
-export const getUpdatesForSection = (section) => {
-    return SCHEDULE_UPDATES.filter(u => u.section === section);
 };
 
+// Apply overrides to a base schedule grid (used if needed client-side)
 export const getEffectedSchedule = (baseSchedule, updates) => {
     if (!updates || updates.length === 0) return baseSchedule;
 
-    // Deep copy to avoid mutating base schedule
     const newSchedule = JSON.parse(JSON.stringify(baseSchedule));
 
     updates.forEach(update => {
@@ -71,12 +64,11 @@ export const getEffectedSchedule = (baseSchedule, updates) => {
                 reason: update.reason
             };
         } else if (update.type === 'RESCHEDULED') {
-             // Replaces whatever was there
-             newSchedule[update.day][update.slotId] = {
+            newSchedule[update.day][update.slotId] = {
                 ...update.newCourse,
                 status: 'RESCHEDULED',
                 reason: update.reason
-             };
+            };
         }
     });
 

@@ -1,10 +1,12 @@
-import React, { useState, useContext } from 'react';
-import { Search, MapPin, Monitor, BookOpen, Coffee, Wind, Users, Info, DoorOpen, Trees, Archive, X, Menu } from 'lucide-react';
+import React, { useState, useContext, useCallback } from 'react';
+import { Search, MapPin, Monitor, BookOpen, Coffee, Wind, Users, Info, DoorOpen, Trees, Archive, X, Menu, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { buildingData } from '../utils/mapData';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import StudentSidebar from '../components/StudentSidebar';
+import { fetchCurrentAvailability } from '../utils/api';
+import AdminSidebar from '../components/AdminSidebar';
 
 const getCardStyles = (type) => {
     let bgClass, textClass, iconClass, StatusIcon;
@@ -112,6 +114,7 @@ const BalconyBox = ({ label = "Balcony", className = "", style = {} }) => (
 export default function Map() {
     const { userRole, logout } = useContext(AppContext);
     const isStudent = userRole === 'student';
+    const isAdmin = userRole === 'admin';
     const navigate = useNavigate();
 
     const [currentFloor, setCurrentFloor] = useState(0);
@@ -120,6 +123,51 @@ export default function Map() {
     const [selectedItem, setSelectedItem] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Availability toggle state
+    const [showFreeRooms, setShowFreeRooms] = useState(false);
+    const [showFreeFaculty, setShowFreeFaculty] = useState(false);
+    const [availabilityData, setAvailabilityData] = useState(null);
+    const [availabilityLoading, setAvailabilityLoading] = useState(false);
+
+    const loadAvailability = useCallback(async () => {
+        setAvailabilityLoading(true);
+        try {
+            const data = await fetchCurrentAvailability();
+            setAvailabilityData(data);
+        } catch (err) {
+            console.warn('⚠️ Could not fetch availability:', err.message);
+            setAvailabilityData(null);
+        } finally {
+            setAvailabilityLoading(false);
+        }
+    }, []);
+
+    const toggleFreeRooms = () => {
+        const next = !showFreeRooms;
+        setShowFreeRooms(next);
+        if (next && !availabilityData) loadAvailability();
+    };
+
+    const toggleFreeFaculty = () => {
+        const next = !showFreeFaculty;
+        setShowFreeFaculty(next);
+        if (next && !availabilityData) loadAvailability();
+    };
+
+    // Check if a room name is free based on availability data
+    const isRoomFree = (roomTitle) => {
+        if (!availabilityData) return null; // unknown
+        const freeNames = (availabilityData.freeRooms || []).map(r => r.name);
+        return freeNames.includes(roomTitle);
+    };
+
+    // Check if a faculty name is free based on availability data
+    const isFacultyFree = (facultyName) => {
+        if (!availabilityData) return null; // unknown
+        const freeNames = (availabilityData.freeFaculty || []).map(f => f.name);
+        return freeNames.includes(facultyName);
+    };
 
     const handleLogout = () => {
         logout();
@@ -156,18 +204,73 @@ export default function Map() {
         const { bgClass, textClass, iconClass, StatusIcon } = getCardStyles(type);
         const { dot } = getStatusDisplay(type, status);
 
+        // Availability highlighting — full card visual override
+        let availOverrideBg = '';
+        let availOverrideText = '';
+        let availOverrideIcon = '';
+        let availBadge = null;
+        const isAfterHours = availabilityData?.afterHours === true;
+
+        if (showFreeRooms && (type === 'class' || type === 'lab') && availabilityData) {
+            if (isAfterHours) {
+                availOverrideBg = 'bg-slate-200 border-2 border-slate-300';
+                availOverrideText = 'text-slate-400';
+                availOverrideIcon = 'text-slate-300';
+                availBadge = <span className="absolute top-0.5 right-0.5 text-[6px] md:text-[7px] font-black tracking-wider bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded-md uppercase z-20">Closed</span>;
+            } else {
+                const free = isRoomFree(title);
+                if (free === true) {
+                    availOverrideBg = 'bg-emerald-100 border-2 border-emerald-400 shadow-lg';
+                    availOverrideText = 'text-emerald-800';
+                    availOverrideIcon = 'text-emerald-500';
+                    availBadge = <span className="absolute top-0.5 right-0.5 text-[6px] md:text-[7px] font-black tracking-wider bg-emerald-500 text-white px-1.5 py-0.5 rounded-md uppercase z-20 animate-pulse">Free</span>;
+                } else if (free === false) {
+                    availOverrideBg = 'bg-rose-100 border-2 border-rose-300';
+                    availOverrideText = 'text-rose-700';
+                    availOverrideIcon = 'text-rose-400';
+                    availBadge = <span className="absolute top-0.5 right-0.5 text-[6px] md:text-[7px] font-black tracking-wider bg-rose-500 text-white px-1.5 py-0.5 rounded-md uppercase z-20">In Use</span>;
+                }
+            }
+        }
+        if (showFreeFaculty && type === 'faculty' && availabilityData) {
+            if (isAfterHours) {
+                availOverrideBg = 'bg-slate-200 border-2 border-slate-300';
+                availOverrideText = 'text-slate-400';
+                availOverrideIcon = 'text-slate-300';
+                availBadge = <span className="absolute top-0.5 right-0.5 text-[6px] md:text-[7px] font-black tracking-wider bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded-md uppercase z-20">Closed</span>;
+            } else {
+                const free = isFacultyFree(title);
+                if (free === true) {
+                    availOverrideBg = 'bg-emerald-100 border-2 border-emerald-400 shadow-lg';
+                    availOverrideText = 'text-emerald-800';
+                    availOverrideIcon = 'text-emerald-500';
+                    availBadge = <span className="absolute top-0.5 right-0.5 text-[6px] md:text-[7px] font-black tracking-wider bg-emerald-500 text-white px-1.5 py-0.5 rounded-md uppercase z-20 animate-pulse">Free</span>;
+                } else if (free === false) {
+                    availOverrideBg = 'bg-rose-100 border-2 border-rose-300';
+                    availOverrideText = 'text-rose-700';
+                    availOverrideIcon = 'text-rose-400';
+                    availBadge = <span className="absolute top-0.5 right-0.5 text-[6px] md:text-[7px] font-black tracking-wider bg-rose-500 text-white px-1.5 py-0.5 rounded-md uppercase z-20">In Use</span>;
+                }
+            }
+        }
+
+        const finalBg = availOverrideBg || bgClass;
+        const finalText = availOverrideText || textClass;
+        const finalIcon = availOverrideIcon || iconClass;
+
         return (
             <div
                 style={style}
                 onClick={() => handleCardClick(itemData)}
                 className={`relative flex flex-col items-center justify-center p-1.5 rounded-xl shadow-sm transition-all duration-300 w-full h-full min-h-[60px]
-        ${bgClass} ${isDimmed ? 'opacity-20 grayscale-[0.5]' : 'opacity-100 z-10'} 
+        ${finalBg} ${isDimmed ? 'opacity-20 grayscale-[0.5]' : 'opacity-100 z-10'} 
         ${isInteractive ? 'hover:scale-[1.05] cursor-pointer hover:shadow-md' : 'cursor-default'} ${className}`}
             >
-                {dot !== 'hidden' && <div className={`absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ${dot}`} />}
-                <StatusIcon className={`w-3.5 h-3.5 mb-1 md:w-4 md:h-4 ${iconClass} stroke-[1.5]`} />
-                <h3 className={`font-bold text-[8px] md:text-[11px] text-center leading-tight px-1 ${textClass}`}>{title}</h3>
-                <p className={`text-[6.5px] md:text-[7.5px] font-bold tracking-wider uppercase mt-0.5 opacity-70 ${textClass}`}>
+                {availBadge}
+                {!availBadge && dot !== 'hidden' && <div className={`absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ${dot}`} />}
+                <StatusIcon className={`w-3.5 h-3.5 mb-1 md:w-4 md:h-4 ${finalIcon} stroke-[1.5]`} />
+                <h3 className={`font-bold text-[8px] md:text-[11px] text-center leading-tight px-1 ${finalText}`}>{title}</h3>
+                <p className={`text-[6.5px] md:text-[7.5px] font-bold tracking-wider uppercase mt-0.5 opacity-70 ${finalText}`}>
                     {subtitle}
                 </p>
             </div>
@@ -177,7 +280,7 @@ export default function Map() {
     return (
         <div className="flex h-screen bg-[#F4F6F9] font-sans text-slate-800 overflow-hidden">
 
-            {/* Mobile overlay for faculty sidebar */}
+            {/* Mobile overlay for faculty/admin sidebar */}
             {!isStudent && isSidebarOpen && (
                 <div
                     className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] lg:hidden"
@@ -193,12 +296,16 @@ export default function Map() {
                     fixed lg:relative inset-y-0 left-0 w-72 md:w-[312px] bg-white border-r border-slate-200 flex flex-col z-[1001] transition-transform duration-300 transform
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}>
-                    <Sidebar onClose={() => setIsSidebarOpen(false)} />
+                    {isAdmin ? (
+                        <AdminSidebar onClose={() => setIsSidebarOpen(false)} />
+                    ) : (
+                        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+                    )}
                 </aside>
             )}
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[#F4F6F9]">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F4F6F9] min-w-0">
 
                 {/* Mobile header toggle */}
                 <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0 sticky left-0 w-full z-[110]">
@@ -214,8 +321,8 @@ export default function Map() {
                     </button>
                 </header>
 
-                <div className="flex flex-col">
-                    <div className="sticky left-0 z-[110] w-[calc(100vw-2rem)] md:w-[calc(100vw-340px)] lg:w-[calc(100vw-360px)]">
+                <div className="flex flex-col min-w-0">
+                    <div className="sticky left-0 z-[110] w-full">
                         <div className="bg-white px-6 py-4 shadow-sm rounded-b-3xl mx-4 mt-4 border-b border-slate-100">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
                                 <div className="relative w-full md:w-96">
@@ -255,8 +362,52 @@ export default function Map() {
                                                 {filter}
                                             </button>
                                         ))}
+
+                                        {/* Availability Toggle Buttons */}
+                                        <div className="w-px bg-slate-200 mx-1 self-stretch" />
+                                        <button
+                                            onClick={toggleFreeRooms}
+                                            className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5
+                                                ${showFreeRooms
+                                                    ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-400 ring-offset-2'
+                                                    : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'}`}
+                                        >
+                                            {availabilityLoading && showFreeRooms ? <Loader2 size={12} className="animate-spin" /> : <DoorOpen size={12} />}
+                                            Free Rooms
+                                        </button>
+                                        <button
+                                            onClick={toggleFreeFaculty}
+                                            className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5
+                                                ${showFreeFaculty
+                                                    ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-400 ring-offset-2'
+                                                    : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'}`}
+                                        >
+                                            {availabilityLoading && showFreeFaculty ? <Loader2 size={12} className="animate-spin" /> : <Users size={12} />}
+                                            Free Faculty
+                                        </button>
                                     </div>
                                 </div>
+
+                                {/* Availability Status Banner */}
+                                {(showFreeRooms || showFreeFaculty) && availabilityData && (
+                                    availabilityData.afterHours ? (
+                                        <div className="flex items-center gap-3 bg-slate-100 border border-slate-300 px-5 py-2.5 rounded-xl">
+                                            <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></div>
+                                            <span className="text-xs font-bold text-slate-600">
+                                                No classes in session — {availabilityData.currentDay} {availabilityData.currentTime}. All rooms and faculty are unavailable.
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-xl">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                            <span className="text-xs font-bold text-emerald-700">
+                                                Live — Slot {availabilityData.currentSlot?.startTime}–{availabilityData.currentSlot?.endTime}
+                                                {showFreeRooms && ` • ${availabilityData.freeRooms.length} free rooms`}
+                                                {showFreeFaculty && ` • ${availabilityData.freeFaculty.length} free faculty`}
+                                            </span>
+                                        </div>
+                                    )
+                                )}
 
                                 {/* LEGEND */}
                                 <div className="flex items-center gap-6 bg-slate-50/80 px-5 py-3 rounded-2xl border border-slate-100 shadow-sm shrink-0">
@@ -274,7 +425,7 @@ export default function Map() {
                     </div>
 
                     {/* MAP CANVAS */}
-                    <div className="p-6 relative">
+                    <div className="p-6 relative overflow-x-auto">
                         <div className="mx-auto w-[2250px]">
                             <div className="relative w-[2200px] h-[780px] bg-white border-[12px] border-slate-100 rounded-[3rem] shadow-sm p-4 overflow-visible">
 

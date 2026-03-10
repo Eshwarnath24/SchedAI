@@ -11,7 +11,8 @@ import {
     Check,
     CheckCircle2,
     X,
-    AlertTriangle
+    AlertTriangle,
+    Loader2
 } from 'lucide-react';
 import { parseStudentRollNumber, STUDENT_ROLL_FORMAT } from '../utils/rollNumber';
 
@@ -26,6 +27,7 @@ const AuthPage = () => {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState({ title: '', message: '' });
     const [toastType, setToastType] = useState('success');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     const roleData = {
         student: {
@@ -42,7 +44,7 @@ const AuthPage = () => {
         }
     };
 
-    const identifierLabel = currentRole === 'student' ? 'Roll Number' : 'Teacher ID';
+    const identifierLabel = currentRole === 'student' ? 'Roll Number' : currentRole === 'admin' ? 'Admin Email' : 'Teacher ID';
 
     const showToastNotification = (title, message, type = 'success') => {
         setToastMessage({ title, message });
@@ -71,6 +73,7 @@ const AuthPage = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        if (isLoggingIn) return;
 
         const trimmedId = userId.trim();
         if (!trimmedId) {
@@ -96,11 +99,14 @@ const AuthPage = () => {
             studentDetails = parsed;
         }
 
-        const fullEmail = `${normalizedIdentifier}${getEmailDomain()}`;
+        // Admin types full email directly; others get domain suffix appended
+        const fullEmail = currentRole === 'admin' ? trimmedId : `${normalizedIdentifier}${getEmailDomain()}`;
+        setIsLoggingIn(true);
         const loginResult = await login(fullEmail, password, currentRole, normalizedIdentifier, studentDetails);
 
         if (!loginResult?.success) {
             showToastNotification('Login Failed', loginResult?.error || 'Unable to login with the provided credentials.', 'error');
+            setIsLoggingIn(false);
             return;
         }
 
@@ -110,6 +116,7 @@ const AuthPage = () => {
         // Navigate to dashboard after a brief delay
         setTimeout(() => {
             setShowToast(false);
+            setIsLoggingIn(false);
             if (currentRole === 'admin') {
                 navigate('/admin/dashboard');
             } else if (currentRole == 'teacher') {
@@ -309,13 +316,15 @@ const AuthPage = () => {
                                                     type="text"
                                                     value={userId}
                                                     onChange={(e) => setUserId(e.target.value)}
-                                                    className="peer w-full bg-gray-50 border border-gray-200 rounded-xl pl-5 pr-[220px] py-3.5 md:py-4 text-base text-gray-900 outline-none focus:border-[#a50034] focus:ring-1 focus:ring-[#a50034]/20 transition-all placeholder-transparent"
+                                                    className={`peer w-full bg-gray-50 border border-gray-200 rounded-xl pl-5 ${currentRole === 'admin' ? 'pr-5' : 'pr-[220px]'} py-3.5 md:py-4 text-base text-gray-900 outline-none focus:border-[#a50034] focus:ring-1 focus:ring-[#a50034]/20 transition-all placeholder-transparent`}
                                                     placeholder={identifierLabel}
                                                     required
                                                 />
-                                                <span className="absolute right-5 top-3.5 md:top-4 text-gray-400 text-sm font-medium pointer-events-none">
-                                                    {getEmailDomain()}
-                                                </span>
+                                                {currentRole !== 'admin' && (
+                                                    <span className="absolute right-5 top-3.5 md:top-4 text-gray-400 text-sm font-medium pointer-events-none">
+                                                        {getEmailDomain()}
+                                                    </span>
+                                                )}
                                                 <label className="absolute left-5 top-3.5 md:top-4 text-gray-400 text-sm transition-all pointer-events-none peer-placeholder-shown:text-base peer-focus:text-xs peer-focus:-translate-y-2.5 peer-focus:text-[#a50034] peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:-translate-y-6 bg-white px-1 peer-[:not(:placeholder-shown)]:text-[#a50034]">
                                                     {identifierLabel}
                                                 </label>
@@ -368,10 +377,23 @@ const AuthPage = () => {
                                         </div>
                                     </div>
 
-                                    <button type="submit" className="w-full bg-[#a50034] text-white py-4 md:py-4.5 rounded-xl font-semibold text-base shadow-xl shadow-red-900/10 hover:shadow-red-900/25 active:scale-[0.98] md:hover:-translate-y-1 transition-all duration-300 flex justify-center items-center gap-2.5 group mt-4 relative overflow-hidden">
+                                    <button
+                                        type="submit"
+                                        disabled={isLoggingIn}
+                                        className="w-full bg-[#a50034] text-white py-4 md:py-4.5 rounded-xl font-semibold text-base shadow-xl shadow-red-900/10 hover:shadow-red-900/25 active:scale-[0.98] md:hover:-translate-y-1 transition-all duration-300 flex justify-center items-center gap-2.5 group mt-4 relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                                    >
                                         <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                                        <span className="relative">Login to Dashboard</span>
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative" />
+                                        {isLoggingIn ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin relative" />
+                                                <span className="relative">Logging in...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="relative">Login to Dashboard</span>
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative" />
+                                            </>
+                                        )}
                                     </button>
                                 </form>
                             </div>

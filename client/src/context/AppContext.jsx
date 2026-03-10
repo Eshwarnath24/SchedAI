@@ -101,10 +101,13 @@ export const AppContextProvider = (props) => {
                             year: courseObj.year || '',
                             section: courseObj.section || '',
                             studentCount: courseObj.studentCount || 0,
-                            status: 'scheduled',
+                            status: courseObj.status === 'CANCELLED' ? 'cancelled' : courseObj.status === 'RESCHEDULED' ? 'rescheduled' : 'scheduled',
+                            isCancelled: courseObj.status === 'CANCELLED',
                             faculty: courseObj.faculty || '',
                             facultyId: courseObj.facultyId || null,
                             sectionId: courseObj.sectionId || null,
+                            overrideId: courseObj.overrideId || null,
+                            reason: courseObj.reason || null,
                         });
                     });
                 });
@@ -143,10 +146,13 @@ export const AppContextProvider = (props) => {
                             year: courseObj.year || '',
                             section: courseObj.section || '',
                             studentCount: courseObj.studentCount || 0,
-                            status: 'scheduled',
+                            status: courseObj.status === 'CANCELLED' ? 'cancelled' : courseObj.status === 'RESCHEDULED' ? 'rescheduled' : 'scheduled',
+                            isCancelled: courseObj.status === 'CANCELLED',
                             faculty: courseObj.faculty || '',
                             facultyId: courseObj.facultyId || null,
                             sectionId: courseObj.sectionId || null,
+                            overrideId: courseObj.overrideId || null,
+                            reason: courseObj.reason || null,
                         });
                     });
                 });

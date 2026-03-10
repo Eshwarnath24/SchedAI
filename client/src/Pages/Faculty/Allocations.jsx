@@ -10,6 +10,7 @@ import {
   ChevronUp,
   ChevronDown,
   Clock,
+  Menu,
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 
@@ -33,6 +34,7 @@ const FacultyPreferenceForm = () => {
   // --- STATE MANAGEMENT ---
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [preferences, setPreferences] = useState({}); // Grouped by semester: { 1: [...], 3: [...] }
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Drag State: Tracks Semester AND Index
   const [draggedItem, setDraggedItem] = useState(null); // { sem: number, index: number }
@@ -159,14 +161,42 @@ const FacultyPreferenceForm = () => {
   const activeSems = semesterCycle === 'odd' ? [1, 3, 5, 7] : [2, 4, 6, 8];
 
   return (
-    <div className="bg-[#F8F9FA] min-h-screen">
-      {/* Fixed Sidebar for large screens */}
-      <div className="hidden lg:block fixed top-0 left-0 h-full w-72 z-30">
-        <Sidebar />
-      </div>
-      {/* Main content with left margin for sidebar */}
-      <div className="lg:ml-72">
-        <div className="max-w-3xl mx-auto space-y-6 pb-20 font-sans text-gray-900 p-6">
+    <div className="flex min-h-screen bg-[#F8F9FA]">
+      {/* Mobile sidebar overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed lg:relative inset-y-0 left-0 w-72 bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 transform ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0">
+        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">
+              A
+            </div>
+            <span className="font-bold text-slate-800">Amrita</span>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
+            <Menu size={24} />
+          </button>
+        </header>
+
+        <div className="max-w-7xl mx-auto space-y-6 pb-20 font-sans text-gray-900 p-4 sm:p-6 lg:p-8">
           {/* Header */}
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -204,35 +234,36 @@ const FacultyPreferenceForm = () => {
               </button>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-inner space-y-8">
-              {/* SEMESTER GROUPS */}
-              {activeSems.map((semNum) => {
-                const semCourses = preferences[semNum] || [];
-                if (semCourses.length === 0) return null;
-                return (
-                  <div key={semNum} className="space-y-3">
-                    <div className="flex items-center gap-3 mb-4 pl-2">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-red-100 text-[#880e4f] flex items-center justify-center font-black shadow-sm">
-                        S{semNum}
+            <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-inner">
+              {/* SEMESTER GROUPS IN 2x2 GRID */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                {activeSems.map((semNum) => {
+                  const semCourses = preferences[semNum] || [];
+                  if (semCourses.length === 0) return null;
+                  return (
+                    <div key={semNum} className="space-y-3">
+                      <div className="flex items-center gap-3 mb-4 pl-2">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-red-100 text-[#880e4f] flex items-center justify-center font-black shadow-sm">
+                          S{semNum}
+                        </div>
+                        <h4 className="font-bold text-gray-900 uppercase tracking-widest text-sm">Semester {semNum} Priorities</h4>
                       </div>
-                      <h4 className="font-bold text-gray-900 uppercase tracking-widest text-sm">Semester {semNum} Priorities</h4>
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {semCourses.map((course, index) => {
-                        // Drag/drop and highlight logic
-                        const isDragged = draggedItem?.sem === semNum && draggedItem?.index === index;
-                        const isDropTarget = dropIndicator?.sem === semNum && dropIndicator?.index === index && !isDragged;
-                        return (
-                          <div
-                            key={course.id}
-                            className="relative group select-none"
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, semNum, index)}
-                            onDragOver={(e) => handleDragOver(e, semNum, index)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, semNum, index)}
-                            onDragEnd={handleDragEnd}
-                          >
+                      <div className="flex flex-col gap-3">
+                        {semCourses.map((course, index) => {
+                          // Drag/drop and highlight logic
+                          const isDragged = draggedItem?.sem === semNum && draggedItem?.index === index;
+                          const isDropTarget = dropIndicator?.sem === semNum && dropIndicator?.index === index && !isDragged;
+                          return (
+                            <div
+                              key={course.id}
+                              className="relative group select-none"
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, semNum, index)}
+                              onDragOver={(e) => handleDragOver(e, semNum, index)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, semNum, index)}
+                              onDragEnd={handleDragEnd}
+                            >
                             {/* Drop indicator (top) */}
                             {isDropTarget && dropIndicator.position === 'top' && (
                               <div className="absolute -top-[7.5px] left-0 right-0 h-1.5 bg-[#880e4f] rounded-full z-10 shadow-[0_0_12px_rgba(136,14,79,0.8)] pointer-events-none" />
@@ -300,15 +331,16 @@ const FacultyPreferenceForm = () => {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
               {/* Submit button */}
               <div className="pt-6 mt-4 border-t border-dashed border-gray-200">
                 <button
                   onClick={() => setIsSubmitted(true)}
-                  className="w-full py-4 bg-[#880e4f] text-white rounded-2xl font-bold text-lg shadow-[0_8px_20px_-4px_rgba(136,14,79,0.4)] hover:bg-[#6a0a3d] hover:shadow-[0_12px_24px_-4px_rgba(136,14,79,0.5)] flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-200"
+                  className="w-full py-4 bg-[#8B0000] text-white rounded-2xl font-bold text-lg shadow-[0_8px_20px_-4px_rgba(136,14,79,0.4)] hover:bg-[#6a0a3d] hover:shadow-[0_12px_24px_-4px_rgba(136,14,79,0.5)] flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-200"
                 >
                   <Send size={20} /> Finalize Priority Form
                 </button>
@@ -316,7 +348,7 @@ const FacultyPreferenceForm = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 };
