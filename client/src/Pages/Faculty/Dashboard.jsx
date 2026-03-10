@@ -35,12 +35,23 @@ const Dashboard = () => {
   const { events, currentTeacher, announcementsList, loggedInUser } = useContext(AppContext);
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Grade OS Lab Reports", completed: false },
-    { id: 2, text: "Prepare Discrete Math Quiz", completed: true },
-    { id: 3, text: "CSE department head meeting", completed: false }
-  ]);
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('faculty_tasks');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
   const [newTask, setNewTask] = useState("");
+
+  // Persist tasks to localStorage
+  useEffect(() => {
+    localStorage.setItem('faculty_tasks', JSON.stringify(tasks));
+  }, [tasks]);
   
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState(null);
@@ -156,8 +167,15 @@ const Dashboard = () => {
   , [scheduleData]);
   
   const totalCourses = dashboardData?.kpis?.totalCourses || currentTeacher.totalCourses || 0;
-  const totalStudents = currentTeacher.totalStudents || 0;
+  // Use inventory students sum if available, else fallback
+  const totalStudents = dashboardData?.inventory?.reduce((acc, curr) => acc + (curr.studentCount || 0), 0) || currentTeacher.totalStudents || 0;
   const weeklyHours = dashboardData?.kpis?.weeklyHours || currentTeacher.weeklyHours || 0;
+
+  // Efficiency Metrics
+  const efficiencyMetrics = dashboardData?.efficiency || {};
+  const facultyLoad = efficiencyMetrics.utilizationRate || 0;
+  const researchGoal = efficiencyMetrics.consecutiveHoursMetric || 0;
+  const adminTasks = Math.min(100, Math.round((efficiencyMetrics.engagementScore || 0) * 1.5)) || 0; // scaled for UI
 
   // Memoize announcements processing
   const recentAnnouncements = useMemo(() => {

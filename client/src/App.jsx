@@ -41,7 +41,8 @@ const App = () => {
       {/* Universal Dashboard Route - Redirects based on role */}
       <Route path="/dashboard" element={
         isAuthenticated
-          ? (userRole === 'student' ? <Navigate to="/student/dashboard" /> : <Dashboard />)
+          ? (userRole === 'student' ? <Navigate to="/student/dashboard" /> : 
+             userRole === 'admin' ? <Navigate to="/admin/dashboard" /> : <Dashboard />)
           : <Navigate to="/auth" />
       } />
 

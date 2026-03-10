@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave Request — Rejected</title>
+  <style>
+    body        { margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Arial, sans-serif; }
+    .wrapper    { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header     { background-color: #dc2626; padding: 32px 40px; }
+    .header h1  { margin: 0; color: #ffffff; font-size: 22px; font-weight: 600; }
+    .header p   { margin: 6px 0 0; color: #fecaca; font-size: 14px; }
+    .body       { padding: 32px 40px; color: #374151; }
+    .body p     { margin: 0 0 16px; line-height: 1.6; font-size: 15px; }
+    .detail-box { background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px; padding: 16px 20px; margin: 24px 0; }
+    .detail-box table  { width: 100%; border-collapse: collapse; }
+    .detail-box td     { padding: 6px 0; font-size: 14px; color: #374151; vertical-align: top; }
+    .detail-box td:first-child { font-weight: 600; width: 140px; color: #991b1b; }
+    .badge      { display: inline-block; background: #fee2e2; color: #991b1b; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .footer     { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 40px; text-align: center; }
+    .footer p   { margin: 0; color: #9ca3af; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <div class="header">
+      <h1>SchedAI &nbsp;·&nbsp; Leave Rejected</h1>
+      <p>Your leave request has been rejected &nbsp;<span class="badge">Rejected</span></p>
+    </div>
+
+    <!-- ── Body ───────────────────────────────────────────────── -->
+    <div class="body">
+      <p>Dear <strong>{{facultyName}}</strong>,</p>
+      <p>
+        We regret to inform you that your leave request has been
+        <strong>rejected</strong>. The details of the request are as follows:
+      </p>
+
+      <div class="detail-box">
+        <table>
+          <tr>
+            <td>Leave Type</td>
+            <td>{{leaveType}}</td>
+          </tr>
+          <tr>
+            <td>From Date</td>
+            <td>{{fromDate}}</td>
+          </tr>
+          <tr>
+            <td>To Date</td>
+            <td>{{toDate}}</td>
+          </tr>
+          <tr>
+            <td>Reason</td>
+            <td>{{reason}}</td>
+          </tr>
+        </table>
+      </div>
+
+      <p>
+        If you believe this was a mistake or need further clarification,
+        please contact the administration office directly.
+      </p>
+      <p>Regards,<br/><strong>SchedAI Notification System</strong></p>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="footer">
+      <p>This is an automated message from SchedAI. Please do not reply to this email.</p>
+    </div>
+
+  </div>
+</body>
+</html>

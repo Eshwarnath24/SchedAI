@@ -20,6 +20,19 @@ const Course = require('../DB_models/Course');
 const LeaveRequest = require('../DB_models/leaveRequest');
 const User = require('../DB_models/User');
 const Section = require('../DB_models/Section');
+const TimeSlot = require('../DB_models/timeSlot');
+
+// Fallback slot times if TimeSlot DB is unavailable
+const DEFAULT_SLOT_TIMES = {
+  1: { start: '09:00', end: '10:00' },
+  2: { start: '10:00', end: '11:00' },
+  3: { start: '11:15', end: '12:15' },
+  4: { start: '12:15', end: '13:15' },
+  5: { start: '14:00', end: '15:00' },
+  6: { start: '15:00', end: '16:00' },
+  7: { start: '16:00', end: '17:00' },
+  8: { start: '17:00', end: '18:00' }
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORE AGGREGATION SERVICE
@@ -42,7 +55,7 @@ class FacultyDataAggregationService {
 
       // Verify faculty exists
       const faculty = await User.findById(facultyId).lean();
-      if (!faculty || faculty.role !== 'Faculty') {
+      if (!faculty || !['Faculty', 'LabAssistant', 'Admin'].includes(faculty.role)) {
         throw new Error('Faculty member not found');
       }
 
@@ -279,6 +292,19 @@ class FacultyDataAggregationService {
         return this._emptyScheduleMetrics();
       }
 
+      // Load time slot definitions for mapping slotIndex → start/end times
+      let slotTimeMap = { ...DEFAULT_SLOT_TIMES };
+      try {
+        const timeSlots = await TimeSlot.find({}).lean();
+        if (timeSlots.length > 0) {
+          timeSlots.forEach(ts => {
+            slotTimeMap[ts.slotIndex] = { start: ts.startTime, end: ts.endTime };
+          });
+        }
+      } catch (e) {
+        console.warn('[aggregateScheduleMetrics] Could not load TimeSlots, using defaults');
+      }
+
       const currentDay = this._getCurrentDayName();
       const currentTimeInMinutes = this._getCurrentTimeInMinutes();
 
@@ -290,8 +316,9 @@ class FacultyDataAggregationService {
           cls.day === currentDay
         )
         .map(cls => {
-          const startMinutes = this._timeToMinutes(cls.startTime);
-          const endMinutes = this._timeToMinutes(cls.endTime);
+          const slotTimes = slotTimeMap[cls.slotIndex] || { start: '00:00', end: '00:00' };
+          const startMinutes = this._timeToMinutes(slotTimes.start);
+          const endMinutes = this._timeToMinutes(slotTimes.end);
           const isUpcoming = startMinutes > currentTimeInMinutes;
           const isOngoing = startMinutes <= currentTimeInMinutes && endMinutes > currentTimeInMinutes;
           const isPast = endMinutes <= currentTimeInMinutes;
@@ -299,8 +326,8 @@ class FacultyDataAggregationService {
           return {
             slotIndex: cls.slotIndex,
             day: cls.day,
-            startTime: cls.startTime,
-            endTime: cls.endTime,
+            startTime: slotTimes.start,
+            endTime: slotTimes.end,
             courseCode: cls.course?.code || 'N/A',
             courseName: cls.course?.name || 'Unknown Course',
             courseType: cls.course?.type || 'Theory',
@@ -677,8 +704,11 @@ class FacultyDataAggregationService {
   }
 
   static _timeToMinutes(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
+    if (!timeString || typeof timeString !== 'string') return 0;
+    const parts = timeString.split(':');
+    if (parts.length < 2) return 0;
+    const [hours, minutes] = parts.map(Number);
+    return (hours || 0) * 60 + (minutes || 0);
   }
 
   static _calculateDaysBetween(startDate, endDate) {
