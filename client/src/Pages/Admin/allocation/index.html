@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Allocation - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-content">
+                <div class="title-section">
+                    <h1>Academic Course Management</h1>
+                    <p>B.Tech Program - Session 2024-25</p>
+                </div>
+
+                <div class="header-controls">
+                    <div class="sem-toggle-group">
+                        <span class="label">Semester Type:</span>
+                        <div class="toggle-switch">
+                            <input type="radio" id="odd" name="semType" value="odd" checked>
+                            <label for="odd">Odd</label>
+                            <input type="radio" id="even" name="semType" value="even">
+                            <label for="even">Even</label>
+                            <div class="slider"></div>
+                        </div>
+                    </div>
+
+                    <div class="admin-profile">
+                        <div class="profile-info">
+                            <span class="name">Srinivasan</span>
+                            <span class="role">Academic Admin</span>
+                        </div>
+                        <div class="avatar">SR</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="course-workspace">
+            <!-- Faculty Readiness Dashboard -->
+            <section class="readiness-section">
+                <div class="readiness-card">
+                    <div class="readiness-info">
+                        <h3>Faculty Response Status</h3>
+                        <p>Forms must be completed by all faculties to enable Timetable Generation.</p>
+                        <div class="readiness-stats">
+                            <div class="progress-container">
+                                <div class="progress-bar" id="readiness-progress" style="width: 0%"></div>
+                            </div>
+                            <span class="progress-text"><span id="completed-count">0</span> / <span
+                                    id="total-faculties">6</span> Done</span>
+                        </div>
+                    </div>
+                    <div class="readiness-actions">
+                        <button class="btn btn-primary" id="btn-send-forms">Send Forms to All Faculty</button>
+                        <button class="btn btn-success hidden" id="btn-generate-timetable">
+                            <span>⚡</span> Generate Timetable
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="year-selector">
+                <button class="year-tab active" data-year="1">1st Year</button>
+                <button class="year-tab" data-year="2">2nd Year</button>
+                <button class="year-tab" data-year="3">3rd Year</button>
+                <button class="year-tab" data-year="4">4th Year</button>
+            </div>
+
+            <div id="semesters-container">
+                <!-- Semester cards will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="course-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Course</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="course-form">
+                <input type="hidden" id="course-semester">
+                <input type="hidden" id="edit-index">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Course Code</label>
+                        <input type="text" id="course-code" placeholder="e.g., 19CSE301" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Course Title</label>
+                        <input type="text" id="course-title" placeholder="e.g., Operating Systems" required>
+                    </div>
+                    <div class="form-group">
+                        <label>L-T-P</label>
+                        <input type="text" id="course-ltp" placeholder="e.g., 3-0-2" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Credits</label>
+                        <select id="course-credits">
+                            <option value="1">1 Cr</option>
+                            <option value="2">2 Cr</option>
+                            <option value="3">3 Cr</option>
+                            <option value="4" selected>4 Cr</option>
+                            <option value="P/F">Pass/Fail</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Course Category</label>
+                        <select id="course-category">
+                            <option value="Core">Core Subject</option>
+                            <option value="PE">Professional Elective</option>
+                            <option value="FE">Free Elective</option>
+                            <option value="Audit">Audit Course</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

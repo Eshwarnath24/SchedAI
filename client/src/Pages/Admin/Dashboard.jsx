@@ -16,6 +16,7 @@ import {
     Users
 } from 'lucide-react';
 import LeaveForm from './LeaveForm';
+import Allocation from './Allocation';
 import AdminSidebar from '../../components/AdminSidebar';
 import { useLocation } from 'react-router-dom';
 
@@ -277,7 +278,7 @@ const Dashboard = () => {
                                 </div>
                                 <div className="space-y-4 overflow-y-auto no-scrollbar pr-1">
                                     {leaveRequests.map(req => (
-                                        <div key={`leave - ${req.id} `} className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl hover:border-accent hover:bg-white transition-all shadow-sm">
+                                        <div key={`leave-${req.id}`} className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl hover:border-accent hover:bg-white transition-all shadow-sm">
                                             <div className="w-10 h-10 rounded-2xl bg-brand text-accent flex items-center justify-center font-black text-xs shadow-md">
                                                 {req.initial}
                                             </div>
@@ -351,6 +352,8 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
+                ) : activeTab === 'allocations' ? (
+                    <Allocation />
                 ) : (
                     <LeaveForm />
                 )}

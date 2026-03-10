@@ -39,7 +39,7 @@ const AdminSidebar = ({ onClose }) => {
         { id: 'workload', label: 'Workload', icon: BarChart, action: () => { } },
         { id: 'reports', label: 'Reports', icon: Activity, action: () => navigate('/admin/reports') },
         { id: 'leave-form', label: 'Leave Form', icon: FileText, action: () => navigate('/admin/dashboard', { state: { tab: 'leave-form' } }) },
-        { id: 'allocations', label: 'Allocations', icon: Users, action: () => { } },
+        { id: 'allocations', label: 'Allocations', icon: Users, action: () => navigate('/admin/dashboard', { state: { tab: 'allocations' } }) },
         { id: 'announcements', label: 'Announcements', icon: Megaphone, action: () => { } },
         { id: 'map', label: 'Map', icon: MapPin, action: () => navigate('/map') }
     ];
