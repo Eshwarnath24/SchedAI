@@ -10,9 +10,34 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
+// CORS Configuration - Allow specific laptop IPs
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://10.12.75.184:5173',  // Lap1
+  'http://10.12.87.38:5173',   // Lap2
+  'http://10.12.75.184:3000',  // Lap1 alternative port
+  'http://10.12.87.38:3000',   // Lap2 alternative port
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Or use: callback(new Error('Not allowed by CORS')) for strict mode
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
 app.use(express.json()); // Allows JSON parsing
-app.use(cors());         // Allows Frontend connection
+app.use(cors(corsOptions)); // Allows Frontend connection from specific origins
 
 // Import Routes
 const leaveRoutes = require('./BackendAndDB/routes/leaveRoutes');

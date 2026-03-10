@@ -5,16 +5,19 @@
  * Provides real-time KPI metrics and visualizations from MongoDB.
  * 
  * Features:
- *  - Workload visualization (Theory/Lab/Admin hours)
+ *  - Workload visualization (Theory/Lab/CIR hours)
  *  - Class completion tracking
  *  - Real-time schedule overview
  *  - Leave & request status
- *  - Efficiency metrics
+ *  - Advanced efficiency metrics & engagement curves
  * 
  * Constraint: Read-only operations - does not trigger scheduling algorithms.
+ * 
+ * Updated: Uses optimized FacultyDataAggregationService for performance
  */
 
 const mongoose = require('mongoose');
+const FacultyDataAggregationService = require('../services/facultyDataAggregationService');
 const Schedule = require('../DB_models/schedule');
 const Workload = require('../DB_models/workload');
 const Course = require('../DB_models/Course');
@@ -40,83 +43,8 @@ exports.getFacultyDashboard = async (req, res) => {
             });
         }
 
-        // Verify faculty exists
-        const faculty = await User.findById(facultyId);
-        if (!faculty || faculty.role !== 'Faculty') {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Faculty member not found' 
-            });
-        }
-
-        // Run all aggregations in parallel for performance
-        const [
-            workloadData,
-            scheduleData,
-            leaveData,
-            completionData,
-            efficiencyData
-        ] = await Promise.all([
-            aggregateWorkloadVisualization(facultyId),
-            aggregateScheduleOverview(facultyId),
-            aggregateLeaveStatus(facultyId),
-            aggregateCompletionTracking(facultyId),
-            aggregateEfficiencyMetrics(facultyId)
-        ]);
-
-        // Compile comprehensive dashboard response
-        const dashboardData = {
-            success: true,
-            facultyId,
-            facultyName: faculty.name,
-            lastUpdated: new Date().toISOString(),
-            
-            // KPI Metrics
-            kpis: {
-                totalCourses: workloadData.totalCourses,
-                weeklyHours: workloadData.totalWeeklyHours,
-                completionRate: completionData.overallCompletionRate,
-                activeClasses: scheduleData.todayClassesCount,
-                pendingLeaves: leaveData.pendingCount
-            },
-
-            // Workload Breakdown
-            workload: {
-                byType: workloadData.hoursByType,
-                byCourse: workloadData.courseBreakdown,
-                weeklyDistribution: efficiencyData.weeklyDistribution
-            },
-
-            // Today's Schedule
-            schedule: {
-                today: scheduleData.todayClasses,
-                upcoming: scheduleData.upcomingClasses,
-                dayName: scheduleData.currentDay
-            },
-
-            // Completion Tracking
-            completion: {
-                overall: completionData.overallCompletionRate,
-                byCourse: completionData.courseCompletionRates,
-                targetVsActual: completionData.targetVsActual
-            },
-
-            // Leave & Requests
-            leaves: {
-                pending: leaveData.pendingCount,
-                approved: leaveData.approvedCount,
-                rejected: leaveData.rejectedCount,
-                recentRequests: leaveData.recentLeaves
-            },
-
-            // Efficiency Metrics
-            efficiency: {
-                classDistribution: efficiencyData.classDistribution,
-                engagementScore: efficiencyData.engagementScore,
-                utilizationRate: efficiencyData.utilizationRate,
-                consecutiveHoursMetric: efficiencyData.consecutiveHoursMetric
-            }
-        };
+        // Use optimized aggregation service for maximum performance
+        const dashboardData = await FacultyDataAggregationService.getFacultyAnalytics(facultyId);
 
         res.json(dashboardData);
 
@@ -124,15 +52,16 @@ exports.getFacultyDashboard = async (req, res) => {
         console.error('[dashboardController] Error in getFacultyDashboard:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'Failed to retrieve dashboard data',
+            error: error.message || 'Failed to retrieve dashboard data',
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// AGGREGATION FUNCTIONS
+// LEGACY AGGREGATION FUNCTIONS (Kept for backward compatibility)
 // ═══════════════════════════════════════════════════════════════════════════
+// Note: New implementations should use FacultyDataAggregationService directly
 
 /**
  * Aggregate workload visualization data
