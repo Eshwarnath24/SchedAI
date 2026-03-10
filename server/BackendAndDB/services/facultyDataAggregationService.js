@@ -20,6 +20,19 @@ const Course = require('../DB_models/Course');
 const LeaveRequest = require('../DB_models/leaveRequest');
 const User = require('../DB_models/User');
 const Section = require('../DB_models/Section');
+const TimeSlot = require('../DB_models/timeSlot');
+
+// Fallback slot times if TimeSlot DB is unavailable
+const DEFAULT_SLOT_TIMES = {
+  1: { start: '09:00', end: '10:00' },
+  2: { start: '10:00', end: '11:00' },
+  3: { start: '11:15', end: '12:15' },
+  4: { start: '12:15', end: '13:15' },
+  5: { start: '14:00', end: '15:00' },
+  6: { start: '15:00', end: '16:00' },
+  7: { start: '16:00', end: '17:00' },
+  8: { start: '17:00', end: '18:00' }
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORE AGGREGATION SERVICE
@@ -42,7 +55,7 @@ class FacultyDataAggregationService {
 
       // Verify faculty exists
       const faculty = await User.findById(facultyId).lean();
-      if (!faculty || faculty.role !== 'Faculty') {
+      if (!faculty || !['Faculty', 'LabAssistant', 'Admin'].includes(faculty.role)) {
         throw new Error('Faculty member not found');
       }
 
@@ -106,7 +119,8 @@ class FacultyDataAggregationService {
    */
   static async aggregateWorkloadMetrics(facultyId) {
     try {
-      const activeSchedule = await Schedule.findOne({ isActive: true })
+      // First, check if there's ANY active schedule
+      let activeSchedule = await Schedule.findOne({ isActive: true })
         .populate({
           path: 'classes.course',
           select: 'code name type cirSubType duration credits minWeeklyHours'
@@ -117,33 +131,72 @@ class FacultyDataAggregationService {
         })
         .lean();
 
+      // If no "Active" schedule found, try loading the most recent one as fallback
+      if (!activeSchedule) {
+        console.warn('[aggregateWorkloadMetrics] No isActive:true schedule. Falling back to latest.');
+        activeSchedule = await Schedule.findOne()
+          .sort({ createdAt: -1 })
+          .populate({
+            path: 'classes.course',
+            select: 'code name type cirSubType duration credits minWeeklyHours'
+          })
+          .populate({
+            path: 'classes.section',
+            select: 'name studentCount'
+          })
+          .lean();
+      }
+
       if (!activeSchedule) {
         return this._emptyWorkloadMetrics();
       }
 
       // Filter classes for this faculty
       const facultyClasses = activeSchedule.classes.filter(
-        cls => cls.faculty && cls.faculty.toString() === facultyId
+        cls => (cls.faculty && cls.faculty.toString() === facultyId.toString()) || 
+               (cls.labAssistant && cls.labAssistant.toString() === facultyId.toString())
       );
+
+      console.log(`[aggregateWorkloadMetrics] Found ${facultyClasses.length} sessions for faculty:`, facultyId);
 
       // Aggregate by type
       const hoursByType = { Theory: 0, Lab: 0, CIR: 0 };
       const coursesMap = new Map();
       const weeklyDistribution = this._initializeWeeklyDistribution();
 
+      // Debug: Log first few classes to see data structure
+      if (facultyClasses.length > 0) {
+        console.log('[aggregateWorkloadMetrics] Sample class data:', {
+          day: facultyClasses[0].day,
+          courseType: facultyClasses[0].course?.type,
+          duration: facultyClasses[0].course?.duration,
+          courseName: facultyClasses[0].course?.name
+        });
+      }
+
       facultyClasses.forEach(cls => {
-        if (!cls.course) return;
+        if (!cls.course) {
+          console.warn('[aggregateWorkloadMetrics] Skipping class with no course data');
+          return;
+        }
 
         const courseType = cls.course.type || 'Theory';
         const duration = cls.course.duration || 1;
+        const day = cls.day; // Get the day from the class
 
         // Add to type totals
         hoursByType[courseType] = (hoursByType[courseType] || 0) + duration;
 
-        // Track weekly distribution
-        if (weeklyDistribution[cls.day]) {
-          weeklyDistribution[cls.day].hours += duration;
-          weeklyDistribution[cls.day].classes += 1;
+        // Track weekly distribution - check if day exists (handle case sensitivity)
+        if (weeklyDistribution[day]) {
+          weeklyDistribution[day].hours += duration;
+          weeklyDistribution[day].classes += 1;
+          
+          // Track specific type hours for chart distribution
+          const typeKey = courseType === 'Theory' ? 'Theory' : (courseType === 'Lab' ? 'Lab' : 'CIR');
+          weeklyDistribution[day][typeKey] = (weeklyDistribution[day][typeKey] || 0) + duration;
+        } else {
+          console.warn(`[aggregateWorkloadMetrics] Day "${day}" not found in weeklyDistribution keys:`, Object.keys(weeklyDistribution));
         }
 
         // Track unique courses
@@ -184,17 +237,24 @@ class FacultyDataAggregationService {
       const daysWithClasses = Object.values(weeklyDistribution).filter(d => d.hours > 0).length;
       const avgHoursPerActiveDay = daysWithClasses > 0 ? totalWeeklyHours / daysWithClasses : 0;
 
+      // Format weeklyDistribution for response
+      const formattedWeeklyDistribution = Object.entries(weeklyDistribution).map(([day, data]) => ({
+        day,
+        dayShort: day.substring(0, 3),
+        ...data
+      }));
+
+      // Debug: Log the formatted distribution
+      console.log('[aggregateWorkloadMetrics] Formatted weeklyDistribution:', JSON.stringify(formattedWeeklyDistribution, null, 2));
+      console.log('[aggregateWorkloadMetrics] Total hours by type:', hoursByType);
+
       return {
         totalCourses: coursesMap.size,
         totalWeeklyHours,
         avgHoursPerActiveDay: Math.round(avgHoursPerActiveDay * 10) / 10,
         hoursByType,
         courseBreakdown,
-        weeklyDistribution: Object.entries(weeklyDistribution).map(([day, data]) => ({
-          day,
-          dayShort: day.substring(0, 3),
-          ...data
-        })),
+        weeklyDistribution: formattedWeeklyDistribution,
         totalClasses: facultyClasses.length
       };
 
@@ -232,6 +292,19 @@ class FacultyDataAggregationService {
         return this._emptyScheduleMetrics();
       }
 
+      // Load time slot definitions for mapping slotIndex → start/end times
+      let slotTimeMap = { ...DEFAULT_SLOT_TIMES };
+      try {
+        const timeSlots = await TimeSlot.find({}).lean();
+        if (timeSlots.length > 0) {
+          timeSlots.forEach(ts => {
+            slotTimeMap[ts.slotIndex] = { start: ts.startTime, end: ts.endTime };
+          });
+        }
+      } catch (e) {
+        console.warn('[aggregateScheduleMetrics] Could not load TimeSlots, using defaults');
+      }
+
       const currentDay = this._getCurrentDayName();
       const currentTimeInMinutes = this._getCurrentTimeInMinutes();
 
@@ -243,8 +316,9 @@ class FacultyDataAggregationService {
           cls.day === currentDay
         )
         .map(cls => {
-          const startMinutes = this._timeToMinutes(cls.startTime);
-          const endMinutes = this._timeToMinutes(cls.endTime);
+          const slotTimes = slotTimeMap[cls.slotIndex] || { start: '00:00', end: '00:00' };
+          const startMinutes = this._timeToMinutes(slotTimes.start);
+          const endMinutes = this._timeToMinutes(slotTimes.end);
           const isUpcoming = startMinutes > currentTimeInMinutes;
           const isOngoing = startMinutes <= currentTimeInMinutes && endMinutes > currentTimeInMinutes;
           const isPast = endMinutes <= currentTimeInMinutes;
@@ -252,8 +326,8 @@ class FacultyDataAggregationService {
           return {
             slotIndex: cls.slotIndex,
             day: cls.day,
-            startTime: cls.startTime,
-            endTime: cls.endTime,
+            startTime: slotTimes.start,
+            endTime: slotTimes.end,
             courseCode: cls.course?.code || 'N/A',
             courseName: cls.course?.name || 'Unknown Course',
             courseType: cls.course?.type || 'Theory',
@@ -630,8 +704,11 @@ class FacultyDataAggregationService {
   }
 
   static _timeToMinutes(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
+    if (!timeString || typeof timeString !== 'string') return 0;
+    const parts = timeString.split(':');
+    if (parts.length < 2) return 0;
+    const [hours, minutes] = parts.map(Number);
+    return (hours || 0) * 60 + (minutes || 0);
   }
 
   static _calculateDaysBetween(startDate, endDate) {
@@ -644,11 +721,11 @@ class FacultyDataAggregationService {
 
   static _initializeWeeklyDistribution() {
     return {
-      Monday: { hours: 0, classes: 0 },
-      Tuesday: { hours: 0, classes: 0 },
-      Wednesday: { hours: 0, classes: 0 },
-      Thursday: { hours: 0, classes: 0 },
-      Friday: { hours: 0, classes: 0 }
+      Monday: { hours: 0, classes: 0, Theory: 0, Lab: 0, CIR: 0 },
+      Tuesday: { hours: 0, classes: 0, Theory: 0, Lab: 0, CIR: 0 },
+      Wednesday: { hours: 0, classes: 0, Theory: 0, Lab: 0, CIR: 0 },
+      Thursday: { hours: 0, classes: 0, Theory: 0, Lab: 0, CIR: 0 },
+      Friday: { hours: 0, classes: 0, Theory: 0, Lab: 0, CIR: 0 }
     };
   }
 

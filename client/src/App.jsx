@@ -9,6 +9,8 @@ import Announcements from "./Pages/Faculty/Announcements";
 import Reports from "./Pages/Faculty/Reports";
 import AdminDashboard from "./Pages/Admin/Dashboard";
 import AdminReport from "./Pages/Admin/Report";
+import AdminTimeTable from "./Pages/Admin/TimeTable";
+import AdminAnnouncements from "./Pages/Admin/Announcements";
 import AuthPage from "./Pages/AuthPage";
 import { AppContext } from "./context/AppContext";
 
@@ -43,7 +45,8 @@ const App = () => {
       {/* Universal Dashboard Route - Redirects based on role */}
       <Route path="/dashboard" element={
         isAuthenticated
-          ? (userRole === 'student' ? <Navigate to="/student/dashboard" /> : <Dashboard />)
+          ? (userRole === 'student' ? <Navigate to="/student/dashboard" /> : 
+             userRole === 'admin' ? <Navigate to="/admin/dashboard" /> : <Dashboard />)
           : <Navigate to="/auth" />
       } />
 
@@ -56,6 +59,8 @@ const App = () => {
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/reports" element={<AdminReport />} />
+      <Route path="/admin/timetable" element={<AdminTimeTable />} />
+      <Route path="/admin/announcements" element={<AdminAnnouncements />} />
 
       {/* Faculty Routes */}
       <Route path="/time-table" element={isAuthenticated ? <TimeTable /> : <Navigate to="/auth" />} />

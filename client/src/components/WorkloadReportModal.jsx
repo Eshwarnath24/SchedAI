@@ -9,8 +9,14 @@ import {
   Bar,
 } from 'recharts';
 
-const WorkloadReportModal = ({ isOpen, onClose, stats, chartData, entries, teacher }) => {
+const WorkloadReportModal = ({ isOpen, onClose, stats, chartData = [], entries = [], teacher = {} }) => {
   if (!isOpen) return null;
+
+  // Validate chart data
+  const hasValidChartData = chartData && Array.isArray(chartData) && chartData.length > 0;
+  
+  // Log for debugging
+  console.log('[WorkloadReportModal] chartData:', chartData, 'hasValidChartData:', hasValidChartData);
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-900/70 backdrop-blur-md overflow-y-auto flex items-center justify-center p-4 print:p-0 print:bg-white print:items-start print:overflow-visible">
@@ -95,16 +101,25 @@ const WorkloadReportModal = ({ isOpen, onClose, stats, chartData, entries, teach
                     Weekly Progression
                 </h4>
                 <div className="h-64 w-full min-w-0 border border-slate-100 rounded-xl p-4 bg-slate-50/30">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-                      <Bar dataKey="theory" stackId="a" fill="#A6192E" name="Theory" barSize={40} radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="lab" stackId="a" fill="#F2A900" name="Lab" barSize={40} radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="admin" stackId="a" fill="#555555" name="Admin" barSize={40} radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {hasValidChartData ? (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 'bold' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                        <Bar dataKey="theory" stackId="a" fill="#A6192E" name="Theory" barSize={40} radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="lab" stackId="a" fill="#F2A900" name="Lab" barSize={40} radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="admin" stackId="a" fill="#555555" name="Admin" barSize={40} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-slate-500">No chart data available</p>
+                        <p className="text-xs text-slate-400 mt-1">Data is being loaded or no schedule entries found</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
             </div>
 

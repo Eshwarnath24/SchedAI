@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useContext } from "react";
-import { Menu, Plus, MapPin, Trash2 } from "lucide-react";
+import { Plus, MapPin, Trash2, Loader2, Users, ChevronDown, BookOpen } from "lucide-react";
 import { AddEventModal } from "../../components/AddEventModal";
 import { EditEventModal } from "../../components/EditEventModal";
 import AdminSidebar from "../../components/AdminSidebar";
@@ -13,7 +13,7 @@ import {
     markClassAsScheduled,
     shiftClassInTimetable,
 } from "../../utils/timetableData";
-import { createScheduleOverride, deleteScheduleOverride } from "../../utils/api";
+import { createScheduleOverride, deleteScheduleOverride, fetchSections, fetchTeachers, fetchSectionSchedule, fetchTeacherSchedule } from "../../utils/api";
 
 export default function AdminTimeTable() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -23,7 +23,18 @@ export default function AdminTimeTable() {
     const todayName = DAYS[currentTime.getDay() - 1] || (currentTime.getDay() === 6 ? "Saturday" : "");
     const [activeDay, setActiveDay] = useState(todayName || "Monday");
 
-    const { events, setEvents, loggedInUser } = useContext(AppContext);
+    const { loggedInUser } = useContext(AppContext);
+
+    // Filter state
+    const [filterType, setFilterType] = useState("section"); // 'section' | 'faculty'
+    const [sections, setSections] = useState([]);
+    const [teachers, setTeachers] = useState([]);
+    const [selectedId, setSelectedId] = useState("");
+    const [scheduleInfo, setScheduleInfo] = useState(null);
+    const [scheduleLoading, setScheduleLoading] = useState(false);
+
+    // Local events (populated from API per selected section/faculty)
+    const [events, setEvents] = useState({});
     const [addModal, setAddModal] = useState({ isOpen: false, day: null, slotId: null });
     const [editModal, setEditModal] = useState({ isOpen: false, event: null, day: null, slotId: null });
 
@@ -31,6 +42,71 @@ export default function AdminTimeTable() {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
+
+    // Fetch sections and teachers for the filter dropdowns
+    useEffect(() => {
+        const loadFilters = async () => {
+            try {
+                const [secs, tchs] = await Promise.all([fetchSections(), fetchTeachers()]);
+                setSections(Array.isArray(secs) ? secs : []);
+                setTeachers(Array.isArray(tchs) ? tchs : []);
+            } catch (err) {
+                console.warn("[AdminTimeTable] Failed to load filters:", err.message);
+            }
+        };
+        loadFilters();
+    }, []);
+
+    // Transform API grid { [day]: { [slotId]: {...} } } → events format
+    const transformGrid = (grid) => {
+        if (!grid) return {};
+        const result = {};
+        Object.entries(grid).forEach(([day, slots]) => {
+            if (typeof slots !== "object" || Array.isArray(slots)) return;
+            result[day] = Object.entries(slots).map(([slotId, ev]) => ({
+                id: `${day}-${slotId}-api`,
+                slotId: parseInt(slotId),
+                code: ev.code || "N/A",
+                title: ev.name || "Unknown",
+                room: ev.room || "TBA",
+                type: ev.type || "Theory",
+                status: ev.status === "CANCELLED" ? "cancelled" : "scheduled",
+                isCancelled: ev.status === "CANCELLED",
+                faculty: ev.faculty || "",
+                facultyId: ev.facultyId || null,
+                section: ev.section || "",
+                sectionId: ev.sectionId || null,
+                overrideId: ev.overrideId || null,
+                reason: ev.reason || null,
+            }));
+        });
+        return result;
+    };
+
+    // Load schedule when selection changes
+    useEffect(() => {
+        if (!selectedId) { setEvents({}); setScheduleInfo(null); return; }
+        const loadSchedule = async () => {
+            setScheduleLoading(true);
+            try {
+                let data;
+                if (filterType === "section") {
+                    data = await fetchSectionSchedule(selectedId);
+                    setScheduleInfo({ type: "section", name: data.section?.name || "Section" });
+                } else {
+                    data = await fetchTeacherSchedule(selectedId);
+                    setScheduleInfo({ type: "faculty", name: data.teacher?.name || "Faculty" });
+                }
+                setEvents(transformGrid(data.schedule));
+            } catch (err) {
+                console.error("[AdminTimeTable] Failed to load schedule:", err.message);
+                setEvents({});
+            } finally {
+                setScheduleLoading(false);
+            }
+        };
+        loadSchedule();
+    }, [selectedId, filterType]);
 
     const getEventForSlot = (day, slotId) => events[day]?.find((e) => e.slotId === slotId);
 
@@ -179,8 +255,75 @@ export default function AdminTimeTable() {
                     subtitle="Admin Controls • Ettimadai Campus"
                 />
 
+                {/* Filter Bar */}
+                <div className="px-4 md:px-6 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center gap-3">
+                    <div className="flex bg-slate-100 rounded-xl p-1">
+                        <button
+                            onClick={() => { setFilterType("section"); setSelectedId(""); }}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${
+                                filterType === "section" ? "bg-white text-[#9b1c31] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                            }`}
+                        >
+                            <Users size={12} className="inline mr-1" />Section
+                        </button>
+                        <button
+                            onClick={() => { setFilterType("faculty"); setSelectedId(""); }}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${
+                                filterType === "faculty" ? "bg-white text-[#9b1c31] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                            }`}
+                        >
+                            <BookOpen size={12} className="inline mr-1" />Faculty
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <select
+                            value={selectedId}
+                            onChange={(e) => setSelectedId(e.target.value)}
+                            className="appearance-none pl-4 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#9b1c31]/30 focus:border-[#9b1c31] cursor-pointer min-w-[220px]"
+                        >
+                            <option value="">
+                                {filterType === "section" ? "— Select Section —" : "— Select Faculty —"}
+                            </option>
+                            {filterType === "section"
+                                ? sections.map(s => (
+                                    <option key={s._id} value={s._id}>
+                                        {s.name}{s.year ? ` (Yr ${s.year})` : ""}
+                                    </option>
+                                ))
+                                : teachers.map(t => (
+                                    <option key={t._id} value={t._id}>
+                                        {t.name}{t.department ? ` — ${t.department}` : ""}
+                                    </option>
+                                ))
+                            }
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                    {scheduleInfo && (
+                        <span className="text-xs font-bold text-[#9b1c31] bg-red-50 border border-red-100 px-3 py-1.5 rounded-full">
+                            {scheduleInfo.type === "section" ? "📚" : "👤"} {scheduleInfo.name}
+                        </span>
+                    )}
+                    {scheduleLoading && <Loader2 size={16} className="animate-spin text-slate-400" />}
+                </div>
+
                 <div className="flex-1 overflow-hidden p-4 md:p-6">
                     <div className="h-full bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+                        {!selectedId ? (
+                            <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
+                                <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100">
+                                    <Users size={36} className="text-slate-300" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-black text-slate-600 text-lg">Select a {filterType === "section" ? "Section" : "Faculty Member"}</p>
+                                    <p className="text-sm mt-1">Use the dropdown above to view their timetable</p>
+                                </div>
+                            </div>
+                        ) : scheduleLoading ? (
+                            <div className="h-full flex items-center justify-center">
+                                <Loader2 size={32} className="animate-spin text-[#9b1c31]" />
+                            </div>
+                        ) : (
                         <div className="h-full overflow-auto">
                             <table className={`w-full table-fixed border-collapse ${view === "week" ? "min-w-[1000px]" : ""}`}>
                                 <thead className="sticky top-0 bg-slate-50 z-20">
@@ -262,6 +405,7 @@ export default function AdminTimeTable() {
                                 </tbody>
                             </table>
                         </div>
+                        )}
                     </div>
                 </div>
             </main>

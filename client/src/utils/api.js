@@ -27,6 +27,39 @@ const getAuthHeaders = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// --- Simple Cache System ---
+const apiCache = new Map();
+const CACHE_DURATION = 15000; // 15 seconds cache for more dynamic updates
+
+const getCachedData = (key) => {
+    const cached = apiCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log(`[Cache] Using cached data for: ${key} (age: ${Date.now() - cached.timestamp}ms)`);
+        return cached.data;
+    }
+    if (cached) {
+        console.log(`[Cache] Cache expired for: ${key}`);
+    }
+    return null;
+};
+
+const setCachedData = (key, data) => {
+    apiCache.set(key, { data, timestamp: Date.now() });
+};
+
+const clearCache = () => {
+    apiCache.clear();
+    console.log('[Cache] Cleared all cached data');
+};
+
+// Clear specific cache entry
+const clearCacheKey = (key) => {
+    apiCache.delete(key);
+    console.log(`[Cache] Cleared cache for: ${key}`);
+};
+
+export { clearCache, clearCacheKey };
+
 // --- Authentication ---
 
 // Faculty/Admin login
@@ -171,6 +204,84 @@ export const fetchScheduleOverrides = async (sectionId) => {
     return res.json();
 };
 
+// --- Leave Request APIs ---
+
+export const applyLeaveApi = async (data) => {
+    const res = await fetch(`${API_BASE}/leaves/apply-full`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to apply for leave');
+    return result;
+};
+
+export const fetchLeaveHistory = async (facultyId) => {
+    const res = await fetch(`${API_BASE}/leaves/history/${facultyId}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error('Failed to fetch leave history');
+    return res.json();
+};
+
+export const fetchAllLeaves = async () => {
+    const res = await fetch(`${API_BASE}/leaves/all`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error('Failed to fetch leave requests');
+    return res.json();
+};
+
+export const approveLeaveApi = async (id) => {
+    const res = await fetch(`${API_BASE}/leaves/${id}/approve`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to approve leave');
+    return result;
+};
+
+export const rejectLeaveApi = async (id) => {
+    const res = await fetch(`${API_BASE}/leaves/${id}/reject`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to reject leave');
+    return result;
+};
+
+// --- Faculty Preference APIs ---
+
+export const fetchPreferenceCourses = async (cycle = 'odd') => {
+    const res = await fetch(`${API_BASE}/schedule/preferences/courses?cycle=${cycle}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch preference courses: ${res.statusText}`);
+    return res.json();
+};
+
+export const fetchMyPreferences = async (cycle = 'odd') => {
+    const res = await fetch(`${API_BASE}/schedule/preferences/my?cycle=${cycle}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch my preferences: ${res.statusText}`);
+    return res.json();
+};
+
+export const submitPreferences = async (data) => {
+    const res = await fetch(`${API_BASE}/schedule/preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to submit preferences');
+    return result;
+};
+
 // --- Dashboard APIs ---
 
 /**
@@ -180,6 +291,14 @@ export const fetchScheduleOverrides = async (sectionId) => {
  * @returns {Promise<Object>} Dashboard data including KPIs, workload, schedule, leaves, efficiency
  */
 export const fetchFacultyDashboard = async (facultyId) => {
+    const cacheKey = `dashboard_${facultyId}`;
+    
+    // Check cache first
+    const cachedData = getCachedData(cacheKey);
+    if (cachedData) {
+        return cachedData;
+    }
+    
     try {
         const headers = { ...getAuthHeaders() };
         
@@ -196,6 +315,8 @@ export const fetchFacultyDashboard = async (facultyId) => {
             throw new Error(data.error || 'Failed to load dashboard data');
         }
         
+        // Cache the successful response
+        setCachedData(cacheKey, data);
         return data;
         
     } catch (error) {
@@ -289,10 +410,27 @@ const fetchFacultyDashboardLegacy = async (facultyId) => {
 
 /**
  * Fetch detailed workload report for faculty
+ * Uses its OWN cache key (separate from dashboard) to avoid stale/incompatible data
  * @param {string} facultyId - MongoDB ObjectId of the faculty
+ * @param {boolean} forceRefresh - If true, bypass cache
  * @returns {Promise<Object>} Workload breakdown by course type and day
  */
-export const fetchFacultyWorkloadReport = async (facultyId) => {
+export const fetchFacultyWorkloadReport = async (facultyId, forceRefresh = false) => {
+    const cacheKey = `workload_${facultyId}`;
+    
+    // Clear cache if force refresh is requested
+    if (forceRefresh) {
+        clearCacheKey(cacheKey);
+        console.log('[fetchWorkload] Force refresh - cache cleared');
+    }
+    
+    // Try cache (separate from dashboard cache)
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+        console.log('[fetchWorkload] Returning cached workload data');
+        return cached;
+    }
+    
     try {
         const headers = { ...getAuthHeaders() };
         const response = await fetch(`${API_BASE}/dashboard/${facultyId}`, { headers });
@@ -302,24 +440,132 @@ export const fetchFacultyWorkloadReport = async (facultyId) => {
         }
         
         const data = await response.json();
+        console.log('[fetchWorkload] Raw API response keys:', Object.keys(data));
+        console.log('[fetchWorkload] data.workload keys:', data.workload ? Object.keys(data.workload) : 'N/A');
+        console.log('[fetchWorkload] FULL weeklyDistribution from API:', JSON.stringify(data.workload?.weeklyDistribution));
         
         if (!data.success) {
             throw new Error(data.error || 'Failed to load workload data');
         }
         
-        // Extract and format workload-specific data
-        return {
+        // Build the weeklyDistribution for chart - directly from API data
+        const rawDistribution = data.workload?.weeklyDistribution || [];
+        console.log('[fetchWorkload] rawDistribution length:', rawDistribution.length);
+        if (rawDistribution.length > 0) {
+            console.log('[fetchWorkload] rawDistribution[0]:', JSON.stringify(rawDistribution[0]));
+        }
+        
+        // Map to chart-ready format right here to avoid downstream mapping issues
+        const chartReadyDistribution = rawDistribution.map(day => ({
+            name: day.dayShort || day.day?.substring(0, 3) || '???',
+            theory: Number(day.Theory) || 0,
+            lab: Number(day.Lab) || 0,
+            admin: Number(day.CIR) || Number(day.Admin) || 0,
+            // Also keep raw values for debugging
+            _raw: { Theory: day.Theory, Lab: day.Lab, CIR: day.CIR, hours: day.hours }
+        }));
+        
+        console.log('[fetchWorkload] chartReadyDistribution:', JSON.stringify(chartReadyDistribution));
+        
+        const result = {
             success: true,
             totalHours: data.workload?.totalWeeklyHours || 0,
             hoursByType: data.workload?.hoursByType || {},
             courseBreakdown: data.workload?.courseBreakdown || [],
-            weeklyDistribution: data.workload?.weeklyDistribution || [],
+            weeklyDistribution: rawDistribution,
+            chartReadyData: chartReadyDistribution,
             efficiency: data.efficiency || {}
         };
         
+        // Cache this processed result
+        setCachedData(cacheKey, result);
+        
+        return result;
+        
     } catch (error) {
-        console.error('[fetchFacultyWorkloadReport] Error:', error);
+        console.error('[fetchWorkload] Error:', error);
         throw error;
     }
 };
 
+// --- Course (Allocation) APIs ---
+
+export const fetchCourses = async () => {
+    const res = await fetch(`${API_BASE}/courses`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch courses: ${res.statusText}`);
+    return res.json(); // { year1: {1: [...], 2: [...]}, year2: {...}, ... }
+};
+
+export const createCourse = async (data) => {
+    const res = await fetch(`${API_BASE}/courses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to create course');
+    return result;
+};
+
+export const updateCourse = async (id, data) => {
+    const res = await fetch(`${API_BASE}/courses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to update course');
+    return result;
+};
+
+export const deleteCourse = async (id) => {
+    const res = await fetch(`${API_BASE}/courses/${id}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to delete course');
+    return result;
+};
+
+// --- Admin Schedule Generation ---
+
+export const fetchPreferenceStatus = async (cycle = 'odd') => {
+    const res = await fetch(`${API_BASE}/schedule/preferences/status?cycle=${cycle}`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error('Failed to fetch preference status');
+    return res.json();
+};
+
+export const triggerScheduleGeneration = async () => {
+    const res = await fetch(`${API_BASE}/schedule/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to generate timetable');
+    return result;
+};
+
+// Fetch all courses from DB (admin view — all semesters)
+export const fetchAllCoursesAdmin = async () => {
+    // Reuse the preference courses endpoint with 'odd' cycle to get semesters 1,3,5,7
+    // and 'even' for 2,4,6,8, then merge
+    const [oddRes, evenRes] = await Promise.all([
+        fetch(`${API_BASE}/schedule/preferences/courses?cycle=odd`, {
+            headers: { ...getAuthHeaders() },
+        }),
+        fetch(`${API_BASE}/schedule/preferences/courses?cycle=even`, {
+            headers: { ...getAuthHeaders() },
+        }),
+    ]);
+    if (!oddRes.ok) throw new Error('Failed to fetch odd-semester courses');
+    if (!evenRes.ok) throw new Error('Failed to fetch even-semester courses');
+    const oddData = await oddRes.json();
+    const evenData = await evenRes.json();
+    // Merge the two course maps
+    return { ...oddData.courses, ...evenData.courses };
+};

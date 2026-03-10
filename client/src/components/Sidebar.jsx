@@ -13,6 +13,7 @@ import {
   Activity,
   MapPin
 } from "lucide-react";
+import amritaLogo from '../assets/amrita_logo.png';
 
 const Sidebar = ({ onClose }) => {
   const location = useLocation();
@@ -31,7 +32,7 @@ const Sidebar = ({ onClose }) => {
       <div className="p-6 md:p-8">
         <div className="flex items-center justify-between mb-8 md:mb-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shrink-0">A</div>
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg shrink-0 overflow-hidden"><img src={amritaLogo} alt="Amrita" className="w-full h-full object-contain" /></div>
             <span className="text-md font-bold tracking-tight text-[#1A202C] leading-tight text-left">Amrita Vishwa Vidyapeetham</span>
           </div>
           <button className="lg:hidden p-2 text-slate-500" onClick={onClose}><X size={24} /></button>

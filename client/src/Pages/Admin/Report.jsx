@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   BookOpen, 
   FlaskConical, 
@@ -24,6 +24,8 @@ import {
   PieChart, Pie, Cell 
 } from 'recharts';
 import AdminSidebar from '../../components/AdminSidebar';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // --- MOCK DATA ---
 const departmentMetrics = {
@@ -176,6 +178,9 @@ const MetricCard = ({ icon: Icon, title, value, subtitle, customBg, customText }
 const ReportPreviewModal = ({ faculty, onClose }) => {
   if (!faculty) return null;
 
+  const contentRef = useRef(null);
+  const [generating, setGenerating] = useState(false);
+
   // Prepare chart data
   const performanceData = [
     ...faculty.classes.map(c => ({
@@ -194,8 +199,44 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
     }))
   ];
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPDF = async () => {
+    if (!contentRef.current) return;
+    setGenerating(true);
+    try {
+      const element = contentRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.97);
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      // Scale image to fill the page width, compute total height
+      const imgH = (canvas.height * pageW) / canvas.width;
+
+      let yOffset = 0;
+      let page = 0;
+      while (yOffset < imgH) {
+        if (page > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, -yOffset, pageW, imgH);
+        yOffset += pageH;
+        page++;
+      }
+
+      const safeName = faculty.facultyName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+      pdf.save(`Faculty_Report_${safeName}_${new Date().getFullYear()}.pdf`);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -212,11 +253,24 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
           </h2>
           <div className="flex gap-3">
             <button 
-              onClick={handlePrint}
-              className="px-4 py-2 bg-[#8A1538] text-white text-sm font-semibold rounded-lg hover:bg-[#6e102c] transition-colors flex items-center"
+              onClick={handleDownloadPDF}
+              disabled={generating}
+              className="px-4 py-2 bg-[#8A1538] text-white text-sm font-semibold rounded-lg hover:bg-[#6e102c] transition-colors flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Save as PDF / Print
+              {generating ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </>
+              )}
             </button>
             <button 
               onClick={onClose}
@@ -229,6 +283,7 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
 
         {/* Scrollable Printable Content area */}
         <div className="overflow-y-auto p-8 print:p-0 print:overflow-visible custom-scrollbar print:text-black">
+          <div ref={contentRef}>
           
           {/* Print Header (Amrita Branded) */}
           <div className="border-b-4 border-[#8A1538] pb-6 mb-8 text-center print:pt-4">
@@ -357,12 +412,13 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
             )}
           </div>
           
-          {/* Print Footer */}
-          <div className="hidden print:block mt-12 pt-8 border-t border-gray-200 text-center">
+          {/* PDF Footer — always visible in PDF capture */}
+          <div className="mt-12 pt-8 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">System Generated Report • Amrita Academic Management System</p>
             <p className="text-sm text-gray-500 mt-1">Date Generated: {new Date().toLocaleDateString()}</p>
           </div>
 
+          </div>{/* end contentRef wrapper */}
         </div>
       </div>
     </div>

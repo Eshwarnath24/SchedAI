@@ -1,109 +1,79 @@
-import React, { useEffect, useState } from 'react';
-import { Menu, X, FileText, ChevronRight, AlertCircle, Trash2, Edit2, RotateCcw } from 'lucide-react';
+import React, { useEffect, useState, useContext } from 'react';
+import { Menu, FileText, ChevronRight, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
-
-const readLocal = (key, fallback) => {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
-};
-const writeLocal = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+import { AppContext } from '../../context/AppContext';
+import { applyLeaveApi, fetchLeaveHistory } from '../../utils/api';
 
 const LeaveForm = ({ activeTab, setActiveTab }) => {
+  const { loggedInUser } = useContext(AppContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Form State
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [leaveType, setLeaveType] = useState('Casual Leave');
   const [reason, setReason] = useState('');
-  const [editingId, setEditingId] = useState(null);
 
-  // History State - Initialized as empty or from LocalStorage
-  const [leaveHistory, setLeaveHistory] = useState(() => readLocal('facultyLeaveHistory', []));
+  // History State
+  const [leaveHistory, setLeaveHistory] = useState([]);
 
-  useEffect(() => writeLocal('facultyLeaveHistory', leaveHistory), [leaveHistory]);
+  // Load history from DB on mount
+  useEffect(() => {
+    if (loggedInUser?._id) {
+      loadHistory();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedInUser]);
 
-  const handleSubmit = (e) => {
+  const loadHistory = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchLeaveHistory(loggedInUser._id);
+      setLeaveHistory(data.leaveHistory || []);
+    } catch (err) {
+      console.error('Failed to load leave history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!fromDate || !toDate || !reason) return;
     if (new Date(toDate) < new Date(fromDate)) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      if (editingId) {
-        // Update existing request
-        setLeaveHistory(prev => prev.map(leave =>
-          leave.id === editingId
-            ? {
-              ...leave,
-              appliedDate: new Date().toISOString().split('T')[0], // Update applied date on edit? Or keep original? Let's update.
-              type: leaveType,
-              duration: `${fromDate === toDate ? fromDate : fromDate + ' - ' + toDate}`,
-              reason: reason // Save reason too if we were storing it, but structure only has type/duration/status/date. Let's stick to structure.
-              // Actually, the previous structure didn't store 'reason' in the object in the array, only displayed type/duration. 
-              // We should probably store it if we want to edit it back.
-              // For now, consistent with previous code, we reconstruct the object.
-            }
-            : leave
-        ));
-        setEditingId(null);
-      } else {
-        // Create new request
-        const newRequest = {
-          id: Date.now(),
-          appliedDate: new Date().toISOString().split('T')[0],
-          type: leaveType,
-          duration: `${fromDate === toDate ? fromDate : fromDate + ' - ' + toDate}`,
-          status: 'Pending'
-        };
-        setLeaveHistory(prev => [newRequest, ...prev]);
-      }
+    setSubmitError(null);
+    setSubmitSuccess(false);
 
+    try {
+      await applyLeaveApi({
+        facultyId: loggedInUser._id,
+        fromDate,
+        toDate,
+        message: reason,
+        leaveType,
+      });
+
+      setSubmitSuccess(true);
       setFromDate('');
       setToDate('');
       setReason('');
       setLeaveType('Casual Leave');
+
+      // Reload history
+      await loadHistory();
+
+      setTimeout(() => setSubmitSuccess(false), 3000);
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
       setIsSubmitting(false);
-    }, 800);
-  };
-
-  const handleEdit = (leave) => {
-    setEditingId(leave.id);
-    // Parse duration back to dates
-    if (leave.duration.includes(' - ')) {
-      const [start, end] = leave.duration.split(' - ');
-      setFromDate(start);
-      setToDate(end);
-    } else {
-      setFromDate(leave.duration);
-      setToDate(leave.duration);
     }
-    setLeaveType(leave.type);
-    setReason(''); // We don't store reason in history currently, so can't populate it.
-
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this leave request?')) {
-      setLeaveHistory(prev => prev.filter(l => l.id !== id));
-      if (editingId === id) {
-        setEditingId(null);
-        setFromDate('');
-        setToDate('');
-        setReason('');
-        setLeaveType('Casual Leave');
-      }
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setFromDate('');
-    setToDate('');
-    setReason('');
-    setLeaveType('Casual Leave');
   };
 
   const getStatusBadge = (status) => {
@@ -115,6 +85,16 @@ const LeaveForm = ({ activeTab, setActiveTab }) => {
       default:
         return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit whitespace-nowrap">Pending</span>;
     }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toISOString().split('T')[0];
+  };
+
+  const getLeaveTypeLabel = (type) => {
+    const map = { 'Casual': 'Casual Leave', 'Sick': 'Sick Leave', 'Duty': 'On Duty (OD)' };
+    return map[type] || type;
   };
 
   return (
@@ -158,20 +138,27 @@ const LeaveForm = ({ activeTab, setActiveTab }) => {
           <div className={`grid grid-cols-1 ${leaveHistory.length > 0 ? 'xl:grid-cols-12' : 'max-w-xl mx-auto'} gap-8 items-start pb-10 transition-all duration-500`}>
             {/* Form Section */}
             <div className={leaveHistory.length > 0 ? 'xl:col-span-5' : 'w-full'}>
-              <div className={`bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-slate-100 transition-all ${editingId ? 'ring-2 ring-amber-400/50' : ''}`}>
+              <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-slate-100">
                 <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  {editingId ? (
-                    <>
-                      <Edit2 className="text-amber-500" size={18} />
-                      Edit Request
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="text-[#8B0000]" size={18} />
-                      New Request
-                    </>
-                  )}
+                  <FileText className="text-[#8B0000]" size={18} />
+                  New Request
                 </h2>
+
+                {/* Success message */}
+                {submitSuccess && (
+                  <div className="mb-4 flex items-center gap-2 text-emerald-700 text-sm bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                    <CheckCircle size={16} />
+                    <span>Leave request submitted successfully!</span>
+                  </div>
+                )}
+
+                {/* Error message */}
+                {submitError && (
+                  <div className="mb-4 flex items-center gap-2 text-rose-600 text-xs bg-rose-50 p-3 rounded-xl border border-rose-100">
+                    <AlertCircle size={14} />
+                    <span>{submitError}</span>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
@@ -224,76 +211,59 @@ const LeaveForm = ({ activeTab, setActiveTab }) => {
                     </div>
                   )}
 
-                  <div className="flex gap-3">
-                    {editingId && (
-                      <button
-                        type="button" onClick={handleCancelEdit}
-                        className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2 mt-4"
-                      >
-                        Cancel
-                      </button>
+                  <button
+                    type="submit" disabled={isSubmitting}
+                    className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 mt-4
+                        ${isSubmitting ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-[#8B0000] hover:bg-[#700000] text-white active:scale-[0.98] shadow-[#8B0000]/20'}
+                      `}
+                  >
+                    {isSubmitting ? (
+                      <><Loader2 size={18} className="animate-spin" /> Submitting...</>
+                    ) : (
+                      'Submit Request'
                     )}
-                    <button
-                      type="submit" disabled={isSubmitting}
-                      className={`flex-[2] py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 mt-4
-                          ${isSubmitting ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-[#8B0000] hover:bg-[#700000] text-white active:scale-[0.98] shadow-[#8B0000]/20'}
-                        `}
-                    >
-                      {isSubmitting ? 'Saving...' : (editingId ? 'Update Request' : 'Submit Request')}
-                    </button>
-                  </div>
+                  </button>
                 </form>
               </div>
             </div>
 
-            {/* History Section - Hidden if history length is 0 */}
-            {leaveHistory.length > 0 ? (
+            {/* History Section */}
+            {loading ? (
+              <div className="xl:col-span-7 flex items-center justify-center py-20">
+                <Loader2 size={32} className="text-[#8B0000] animate-spin" />
+              </div>
+            ) : leaveHistory.length > 0 ? (
               <div className="xl:col-span-7 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
                   <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                     <h2 className="text-lg font-bold text-slate-800">My Leave History</h2>
-                    <span className="text-[10px] bg-slate-100 text-slate-500 py-1 px-2 rounded-md font-bold uppercase tracking-wider">Recent</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-500 py-1 px-2 rounded-md font-bold uppercase tracking-wider">{leaveHistory.length} records</span>
                   </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[550px]">
                       <thead>
                         <tr className="bg-slate-50/30">
-                          <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date Applied</th>
+                          <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Applied</th>
                           <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</th>
                           <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duration</th>
+                          <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reason</th>
                           <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                          <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {leaveHistory.map((leave) => (
-                          <tr key={leave.id} className={`hover:bg-slate-50/20 transition-colors ${editingId === leave.id ? 'bg-amber-50/40' : ''}`}>
+                          <tr key={leave._id} className="hover:bg-slate-50/20 transition-colors">
                             <td className="p-4 text-xs text-slate-500 font-medium">
-                              {leave.appliedDate}
+                              {formatDate(leave.createdAt)}
                             </td>
-                            <td className="p-4 text-sm text-slate-800 font-bold">{leave.type}</td>
-                            <td className="p-4 text-xs text-slate-600">{leave.duration}</td>
+                            <td className="p-4 text-sm text-slate-800 font-bold">{getLeaveTypeLabel(leave.type)}</td>
+                            <td className="p-4 text-xs text-slate-600">
+                              {formatDate(leave.fromDate)} → {formatDate(leave.toDate)}
+                            </td>
+                            <td className="p-4 text-xs text-slate-500 max-w-[200px] truncate">{leave.reason || '—'}</td>
                             <td className="p-4">
                               {getStatusBadge(leave.status)}
-                            </td>
-                            <td className="p-4 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => handleEdit(leave)}
-                                  className={`p-2 rounded-lg transition-colors ${editingId === leave.id ? 'bg-amber-100 text-amber-700' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'}`}
-                                  title="Edit Request"
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(leave.id)}
-                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                  title="Delete Request"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
                             </td>
                           </tr>
                         ))}

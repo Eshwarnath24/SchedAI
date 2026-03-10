@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -35,12 +35,23 @@ const Dashboard = () => {
   const { events, currentTeacher, announcementsList, loggedInUser } = useContext(AppContext);
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [tasks, setTasks] = useState([
-    { id: 1, text: "Grade OS Lab Reports", completed: false },
-    { id: 2, text: "Prepare Discrete Math Quiz", completed: true },
-    { id: 3, text: "CSE department head meeting", completed: false }
-  ]);
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('faculty_tasks');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
   const [newTask, setNewTask] = useState("");
+
+  // Persist tasks to localStorage
+  useEffect(() => {
+    localStorage.setItem('faculty_tasks', JSON.stringify(tasks));
+  }, [tasks]);
   
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState(null);
@@ -56,6 +67,12 @@ const Dashboard = () => {
       if (!facultyId) {
         console.warn('[Dashboard] No faculty ID available yet');
         setDashboardLoading(false);
+        return;
+      }
+
+      // Skip if already loaded
+      if (dashboardData) {
+        console.log('[Dashboard] Data already loaded, skipping fetch');
         return;
       }
 
@@ -78,7 +95,7 @@ const Dashboard = () => {
     };
 
     loadDashboardData();
-  }, [loggedInUser]);
+  }, [loggedInUser?._id]); // Only depend on the ID, not the entire object
 
   const addTask = (e) => {
     e.preventDefault();
@@ -100,75 +117,89 @@ const Dashboard = () => {
     setTasks(tasks.filter(t => t.id !== id));
   };
 
-  // Use live dashboard data if available, otherwise fallback to context data
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const contextTodayEvents = (events && events[today]) || [];
-  const apiTodayEvents = dashboardData?.schedule?.today;
-  const hasContextTodayEvents = Array.isArray(contextTodayEvents) && contextTodayEvents.length > 0;
-  const hasApiTodayEvents = Array.isArray(apiTodayEvents) && apiTodayEvents.length > 0;
-  const todaysEvents = hasContextTodayEvents
-    ? contextTodayEvents
-    : (hasApiTodayEvents ? apiTodayEvents : []);
-  const usingApiSchedule = !hasContextTodayEvents && hasApiTodayEvents;
+  // Memoize schedule data processing to prevent unnecessary recalculations
+  const scheduleData = useMemo(() => {
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const contextTodayEvents = (events && events[today]) || [];
+    const apiTodayEvents = dashboardData?.schedule?.today;
+    const hasContextTodayEvents = Array.isArray(contextTodayEvents) && contextTodayEvents.length > 0;
+    const hasApiTodayEvents = Array.isArray(apiTodayEvents) && apiTodayEvents.length > 0;
+    const todaysEvents = hasContextTodayEvents
+      ? contextTodayEvents
+      : (hasApiTodayEvents ? apiTodayEvents : []);
+    const usingApiSchedule = !hasContextTodayEvents && hasApiTodayEvents;
 
-  // Prepare schedule data from dashboard API or fallback to context
-  let scheduleData = todaysEvents.map(event => {
-    // Handle both API format and context format
-    const slot = SLOTS.find(s => s.id === (event.slotIndex || event.slotId));
-    return {
-      time: event.startTime || (slot ? slot.start : 'Unknown'),
-      courseCode: event.courseCode || event.code,
-      title: event.courseName || event.title,
-      location: event.room || 'TBA',
-      studentCount: event.studentCount || 0,
-      isCancelled: !!event.isCancelled,
-      isUpcoming: event.isUpcoming !== undefined ? event.isUpcoming : true
-    };
-  });
-
-  // Filter to only upcoming classes if using dashboard data
-  if (usingApiSchedule && Array.isArray(dashboardData?.schedule?.upcoming) && dashboardData.schedule.upcoming.length > 0) {
-    scheduleData = scheduleData.filter(item => item.isUpcoming);
-  } else {
-    // Fallback: Filter by current time
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-    scheduleData = scheduleData.filter(item => {
-      const [hours, minutes] = item.time.split(':').map(Number);
-      const eventTime = hours * 60 + minutes;
-      return eventTime > currentTime;
+    // Prepare schedule data from dashboard API or fallback to context
+    let data = todaysEvents.map(event => {
+      // Handle both API format and context format
+      const slot = SLOTS.find(s => s.id === (event.slotIndex || event.slotId));
+      return {
+        time: event.startTime || (slot ? slot.start : 'Unknown'),
+        courseCode: event.courseCode || event.code,
+        title: event.courseName || event.title,
+        location: event.room || 'TBA',
+        studentCount: event.studentCount || 0,
+        isCancelled: !!event.isCancelled,
+        isUpcoming: event.isUpcoming !== undefined ? event.isUpcoming : true
+      };
     });
-  }
 
-  // Count only non-cancelled upcoming classes
-  const activeClassesCount = scheduleData.filter(item => !item.isCancelled).length;
+    // Filter to only upcoming classes if using dashboard data
+    if (usingApiSchedule && Array.isArray(dashboardData?.schedule?.upcoming) && dashboardData.schedule.upcoming.length > 0) {
+      data = data.filter(item => item.isUpcoming);
+    } else {
+      // Fallback: Filter by current time
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      data = data.filter(item => {
+        const [hours, minutes] = item.time.split(':').map(Number);
+        const eventTime = hours * 60 + minutes;
+        return eventTime > currentTime;
+      });
+    }
+
+    return data;
+  }, [events, dashboardData?.schedule]);
+
+  // Memoize counts and KPIs
+  const activeClassesCount = useMemo(() => 
+    scheduleData.filter(item => !item.isCancelled).length
+  , [scheduleData]);
   
-  // Use live KPI data or fallback
   const totalCourses = dashboardData?.kpis?.totalCourses || currentTeacher.totalCourses || 0;
-  const totalStudents = currentTeacher.totalStudents || 0;
+  // Use inventory students sum if available, else fallback
+  const totalStudents = dashboardData?.inventory?.reduce((acc, curr) => acc + (curr.studentCount || 0), 0) || currentTeacher.totalStudents || 0;
   const weeklyHours = dashboardData?.kpis?.weeklyHours || currentTeacher.weeklyHours || 0;
 
-  // Get recent announcements for agenda (top 5)
-  const recentAnnouncements = announcementsList
-    .sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
-    .slice(0, 5)
-    .map(announcement => {
-      // Map announcement type to color scheme
-      const colorMap = {
-        urgent: "text-red-600 bg-red-50",
-        academic: "text-blue-600 bg-blue-50",
-        student: "text-emerald-600 bg-emerald-50",
-        general: "text-amber-600 bg-amber-50"
-      };
-      
-      return {
-        id: announcement.id,
-        text: announcement.title,
-        time: announcement.time,
-        type: announcement.type,
-        color: colorMap[announcement.type] || "text-slate-600 bg-slate-50"
-      };
-    });
+  // Efficiency Metrics
+  const efficiencyMetrics = dashboardData?.efficiency || {};
+  const facultyLoad = efficiencyMetrics.utilizationRate || 0;
+  const researchGoal = efficiencyMetrics.consecutiveHoursMetric || 0;
+  const adminTasks = Math.min(100, Math.round((efficiencyMetrics.engagementScore || 0) * 1.5)) || 0; // scaled for UI
+
+  // Memoize announcements processing
+  const recentAnnouncements = useMemo(() => {
+    return announcementsList
+      .sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
+      .slice(0, 5)
+      .map(announcement => {
+        // Map announcement type to color scheme
+        const colorMap = {
+          urgent: "text-red-600 bg-red-50",
+          academic: "text-blue-600 bg-blue-50",
+          student: "text-emerald-600 bg-emerald-50",
+          general: "text-amber-600 bg-amber-50"
+        };
+        
+        return {
+          id: announcement.id,
+          text: announcement.title,
+          time: announcement.time,
+          type: announcement.type,
+          color: colorMap[announcement.type] || "text-slate-600 bg-slate-50"
+        };
+      });
+  }, [announcementsList]);
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] font-sans text-slate-900 overflow-hidden">

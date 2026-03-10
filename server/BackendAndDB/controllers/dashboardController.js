@@ -46,6 +46,12 @@ exports.getFacultyDashboard = async (req, res) => {
         // Use optimized aggregation service for maximum performance
         const dashboardData = await FacultyDataAggregationService.getFacultyAnalytics(facultyId);
 
+        // Debug: log what we're about to send
+        if (dashboardData?.workload?.weeklyDistribution?.length > 0) {
+            console.log('[dashboardController] weeklyDistribution[0]:', JSON.stringify(dashboardData.workload.weeklyDistribution[0]));
+            console.log('[dashboardController] weeklyDistribution[0] keys:', Object.keys(dashboardData.workload.weeklyDistribution[0]));
+        }
+
         res.json(dashboardData);
 
     } catch (error) {
@@ -84,8 +90,16 @@ async function aggregateWorkloadVisualization(facultyId) {
             return {
                 totalCourses: 0,
                 totalWeeklyHours: 0,
-                hoursByType: { Theory: 0, Lab: 0, Admin: 0 },
-                courseBreakdown: []
+                hoursByType: { Theory: 0, Lab: 0, Admin: 0, CIR: 0 },
+                courseBreakdown: [],
+                weeklyDistribution: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => ({
+                    day: day,
+                    dayShort: day.substring(0, 3),
+                    Theory: 0,
+                    Lab: 0,
+                    CIR: 0,
+                    total: 0
+                }))
             };
         }
 
@@ -95,17 +109,31 @@ async function aggregateWorkloadVisualization(facultyId) {
         );
 
         // Aggregate hours by course type
-        const hoursByType = { Theory: 0, Lab: 0, Admin: 0 };
+        const hoursByType = { Theory: 0, Lab: 0, Admin: 0, CIR: 0 };
         const coursesMap = new Map();
+        const dailyDistribution = new Map();
+
+        // Initialize daily distribution for all weekdays
+        const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        weekdays.forEach(day => {
+            dailyDistribution.set(day, { Theory: 0, Lab: 0, CIR: 0 });
+        });
 
         facultyClasses.forEach(cls => {
             if (!cls.course) return;
 
             const courseType = cls.course.type || 'Theory';
             const duration = cls.course.duration || 1;
+            const day = cls.day;
 
             // Add to type totals
             hoursByType[courseType] = (hoursByType[courseType] || 0) + duration;
+
+            // Add to daily distribution
+            if (dailyDistribution.has(day)) {
+                const dayData = dailyDistribution.get(day);
+                dayData[courseType] = (dayData[courseType] || 0) + duration;
+            }
 
             // Track unique courses
             const courseKey = cls.course._id.toString();
@@ -134,13 +162,27 @@ async function aggregateWorkloadVisualization(facultyId) {
             sections: Array.from(course.sections)
         }));
 
+        // Generate weeklyDistribution array
+        const weeklyDistribution = weekdays.map(day => {
+            const dayData = dailyDistribution.get(day);
+            return {
+                day: day,
+                dayShort: day.substring(0, 3),
+                Theory: dayData.Theory,
+                Lab: dayData.Lab,
+                CIR: dayData.CIR,
+                total: dayData.Theory + dayData.Lab + dayData.CIR
+            };
+        });
+
         const totalWeeklyHours = Object.values(hoursByType).reduce((sum, h) => sum + h, 0);
 
         return {
             totalCourses: coursesMap.size,
             totalWeeklyHours,
             hoursByType,
-            courseBreakdown
+            courseBreakdown,
+            weeklyDistribution
         };
 
     } catch (error) {
