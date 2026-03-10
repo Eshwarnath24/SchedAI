@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, { useState, useMemo, useContext, useEffect, useCallback } from 'react';
 import {
   BarChart,
   Bar,
@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Download, BookOpen, Clock, Briefcase, Calendar, UserCheck, Menu, Layout, Printer, Loader2, AlertCircle } from 'lucide-react';
+import { BookOpen, Clock, Briefcase, Calendar, UserCheck, Menu, Layout, Printer, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import Sidebar from '../../components/Sidebar';
 import WorkloadReportModal from '../../components/WorkloadReportModal';
@@ -84,6 +84,107 @@ const StatCard = ({ icon: Icon, label, value, colorClass, iconColorClass }) => (
   </div>
 );
 
+// Memoized Chart Component to improve rendering performance
+const WorkloadChart = React.memo(({ chartData }) => {
+  // Validate chart data
+  if (!chartData || !Array.isArray(chartData) || chartData.length === 0) {
+    return (
+      <div className="h-[300px] sm:h-[400px] w-full min-w-0 flex items-center justify-center">
+        <div className="text-center text-gray-400">
+          <AlertCircle size={48} className="mx-auto mb-4 text-gray-300" />
+          <p className="text-sm font-medium">No workload data available</p>
+          <p className="text-xs mt-1">Check if you have any classes assigned in the schedule</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if all data is zeros
+  const hasNonZeroData = chartData.some(day => 
+    (day.theory > 0) || (day.lab > 0) || (day.admin > 0)
+  );
+
+  if (!hasNonZeroData) {
+    return (
+      <div className="h-[300px] sm:h-[400px] w-full min-w-0 flex items-center justify-center">
+        <div className="text-center text-gray-400">
+          <AlertCircle size={48} className="mx-auto mb-4 text-amber-300" />
+          <p className="text-sm font-medium">No classes scheduled this week</p>
+          <p className="text-xs mt-1">Your workload data shows 0 hours across all days</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[300px] sm:h-[400px] w-full min-w-0">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <BarChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="#f0f0f0"
+          />
+          <XAxis
+            dataKey="name"
+            axisLine={false}
+            tickLine={false}
+            tick={{
+              fill: '#6b7280',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+            dy={10}
+            interval={0}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: '#9ca3af', fontSize: 12 }}
+            domain={[0, 'auto']}
+          />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ fill: 'rgba(243, 244, 246, 0.6)' }}
+          />
+          <Bar
+            dataKey="theory"
+            stackId="a"
+            fill="#A6192E"
+            name="Theory"
+            radius={[0, 0, 4, 4]}
+            maxBarSize={40}
+            isAnimationActive={true}
+          />
+          <Bar
+            dataKey="lab"
+            stackId="a"
+            fill="#F2A900"
+            name="Lab"
+            radius={[0, 0, 0, 0]}
+            maxBarSize={40}
+            isAnimationActive={true}
+          />
+          <Bar
+            dataKey="admin"
+            stackId="a"
+            fill="#555555"
+            name="Admin"
+            radius={[6, 6, 0, 0]}
+            maxBarSize={40}
+            isAnimationActive={true}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+});
+
+WorkloadChart.displayName = 'WorkloadChart';
+
 // --- MAIN PAGE ---
 
 export default function WorkloadPage() {
@@ -98,40 +199,58 @@ export default function WorkloadPage() {
   const [workloadData, setWorkloadData] = useState(null);
   const [workloadLoading, setWorkloadLoading] = useState(true);
   const [workloadError, setWorkloadError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const teacherName = currentTeacher?.name || 'Faculty Member';
   const teacherDept = currentTeacher?.department || 'General Studies';
   const teacherId = loggedInUser?._id || currentTeacher?.id || 'ID-000';
 
   // Fetch real-time workload data
+  const loadWorkloadData = useCallback(async (forceRefresh = false) => {
+    if (!loggedInUser?._id) {
+      console.warn('[Workload] No faculty ID available yet');
+      setWorkloadLoading(false);
+      return;
+    }
+
+    // Skip if already loaded and not forcing refresh
+    if (workloadData && !forceRefresh) {
+      return;
+    }
+
+    try {
+      setWorkloadLoading(true);
+      if (forceRefresh) {
+        setIsRefreshing(true);
+      }
+      
+      const data = await fetchFacultyWorkloadReport(loggedInUser._id, forceRefresh);
+      
+      if (data.success) {
+        setWorkloadData(data);
+        setWorkloadError(null);
+        setLastUpdated(new Date());
+      } else {
+        setWorkloadError('Failed to load workload data');
+      }
+    } catch (error) {
+      console.error('[Workload] Error loading workload data:', error);
+      setWorkloadError(error.message);
+    } finally {
+      setWorkloadLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [loggedInUser, workloadData]);
+
   useEffect(() => {
-    const loadWorkloadData = async () => {
-      if (!loggedInUser?._id) {
-        console.warn('[Workload] No faculty ID available yet');
-        setWorkloadLoading(false);
-        return;
-      }
-
-      try {
-        setWorkloadLoading(true);
-        const data = await fetchFacultyWorkloadReport(loggedInUser._id);
-        
-        if (data.success) {
-          setWorkloadData(data);
-          setWorkloadError(null);
-        } else {
-          setWorkloadError('Failed to load workload data');
-        }
-      } catch (error) {
-        console.error('[Workload] Error loading workload data:', error);
-        setWorkloadError(error.message);
-      } finally {
-        setWorkloadLoading(false);
-      }
-    };
-
     loadWorkloadData();
-  }, [loggedInUser]);
+  }, [loadWorkloadData]);
+
+  // Manual refresh handler
+  const handleRefresh = () => {
+    loadWorkloadData(true);
+  };
 
   // Legacy data for fallback (kept for backward compatibility)
   const facultyReport = useMemo(() => {
@@ -149,32 +268,54 @@ export default function WorkloadPage() {
     [facultyReport]
   );
 
-  // Use real-time data if available, otherwise fallback to legacy
-  const chartData = useMemo(() => {
-    if (workloadData && workloadData.weeklyDistribution) {
-      // Map real-time data to chart format
-      return workloadData.weeklyDistribution.map(day => ({
-        day: day.dayShort,
-        Theory: 0, // Will be calculated from courses
-        Lab: 0,
-        CIR: 0
-      }));
-    }
-    return buildChartData(facultyReport);
-  }, [workloadData, facultyReport]);
+  // Filter chart data to show only up to the current day of the week
+  const DAY_ORDER = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], []);
+  const todayIndex = useMemo(() => {
+    const jsDay = new Date().getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    if (jsDay === 0 || jsDay === 6) return 4; // Weekend → show full week
+    return jsDay - 1; // Mon=0, Tue=1, Wed=2, Thu=3, Fri=4
+  }, []);
 
-  // Calculate totals from real-time data or fallback
+  // Use real-time data if available, otherwise fallback to legacy — filtered up to today
+  const chartData = useMemo(() => {
+    let fullWeekData;
+
+    if (workloadData?.chartReadyData && Array.isArray(workloadData.chartReadyData) && workloadData.chartReadyData.length > 0) {
+      fullWeekData = workloadData.chartReadyData;
+    } else if (workloadData?.weeklyDistribution && Array.isArray(workloadData.weeklyDistribution) && workloadData.weeklyDistribution.length > 0) {
+      fullWeekData = workloadData.weeklyDistribution.map(day => ({
+        name: day.dayShort || day.day?.substring(0, 3) || '???',
+        theory: Number(day.Theory) || 0,
+        lab: Number(day.Lab) || 0,
+        admin: Number(day.CIR) || Number(day.Admin) || 0
+      }));
+    } else {
+      fullWeekData = buildChartData(facultyReport);
+    }
+
+    // Show only days up to and including today
+    return fullWeekData.filter(day => {
+      const idx = DAY_ORDER.indexOf(day.name);
+      return idx !== -1 && idx <= todayIndex;
+    });
+  }, [workloadData, facultyReport, todayIndex, DAY_ORDER]);
+
+  // Determine if using live data
+  const usingLiveData = workloadData && 
+                        (workloadData.chartReadyData?.length > 0 || workloadData.weeklyDistribution?.length > 0);
+
+  // Calculate totals from filtered chart data (only up to current day)
   const { totalTheory, totalLab, totalAdmin, totalHours } = useMemo(() => {
-    if (workloadData && workloadData.hoursByType) {
-      return {
-        totalTheory: workloadData.hoursByType.Theory || 0,
-        totalLab: workloadData.hoursByType.Lab || 0,
-        totalAdmin: workloadData.hoursByType.CIR || 0,
-        totalHours: workloadData.totalHours || 0
-      };
+    if (chartData && chartData.length > 0) {
+      const theory = chartData.reduce((sum, d) => sum + (d.theory || 0), 0);
+      const lab = chartData.reduce((sum, d) => sum + (d.lab || 0), 0);
+      const admin = chartData.reduce((sum, d) => sum + (d.admin || 0), 0);
+      return { totalTheory: theory, totalLab: lab, totalAdmin: admin, totalHours: theory + lab + admin };
     }
     return calculateTotals(completedEntries);
-  }, [workloadData, completedEntries]);
+  }, [chartData, completedEntries]);
+
+  const currentDayLabel = DAY_ORDER[todayIndex];
 
   return (
     <>
@@ -250,15 +391,25 @@ export default function WorkloadPage() {
                 My Workload Report
               </h2>
               <p className="text-gray-500 text-xs sm:text-sm mt-1 flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                Analysis of your daily and weekly teaching distribution
+                <span className="inline-block w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                Live data from active schedule • Analysis of your daily and weekly teaching distribution
               </p>
+              {lastUpdated && (
+                <p className="text-gray-400 text-[10px] mt-1 flex items-center gap-1">
+                  <Clock size={10} />
+                  Last updated: {lastUpdated.toLocaleTimeString()} • Auto-refreshes every 15 seconds
+                </p>
+              )}
             </div>
 
             <div className="flex gap-2 w-full md:w-auto print:hidden">
-              <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-rose-900 bg-white border border-rose-100 rounded-lg hover:bg-rose-50 hover:border-rose-200 shadow-sm transition-all whitespace-nowrap">
-                <Download size={16} />
-                <span className="inline">Export</span>
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 shadow-sm transition-all whitespace-nowrap ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                <span className="inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
 
               <button 
@@ -288,8 +439,14 @@ export default function WorkloadPage() {
 
               <div className="flex-[2] flex flex-col sm:flex-row gap-2">
                 <div className="flex-1 bg-white rounded-xl border border-gray-100 px-4 py-2.5 flex flex-col justify-center hover:border-gray-300 transition-colors">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block flex items-center gap-2">
                     Academic Year
+                    {usingLiveData && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-[8px] font-black uppercase">
+                        <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></span>
+                        Live
+                      </span>
+                    )}
                   </label>
 
                   <div className="flex items-center gap-2 mt-0.5">
@@ -370,7 +527,7 @@ export default function WorkloadPage() {
                   Your Schedule Distribution
                 </h3>
                 <p className="text-sm text-gray-400 font-medium">
-                  Weekly breakdown by activity type
+                  Mon – {currentDayLabel} • {chartData.length} day{chartData.length !== 1 ? 's' : ''} this week
                 </p>
               </div>
 
@@ -390,65 +547,7 @@ export default function WorkloadPage() {
               </div>
             </div>
 
-            <div className="h-[300px] sm:h-[400px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#f0f0f0"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{
-                      fill: '#6b7280',
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
-                    dy={10}
-                    interval={0}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                  />
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={{ fill: 'rgba(243, 244, 246, 0.6)' }}
-                  />
-                  <Bar
-                    dataKey="theory"
-                    stackId="a"
-                    fill="#A6192E"
-                    name="Theory"
-                    radius={[0, 0, 4, 4]}
-                    maxBarSize={40}
-                  />
-                  <Bar
-                    dataKey="lab"
-                    stackId="a"
-                    fill="#F2A900"
-                    name="Lab"
-                    radius={[0, 0, 0, 0]}
-                    maxBarSize={40}
-                  />
-                  <Bar
-                    dataKey="admin"
-                    stackId="a"
-                    fill="#555555"
-                    name="Admin"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={40}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <WorkloadChart chartData={chartData} />
           </div>
         </div>
         )}
