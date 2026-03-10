@@ -45,7 +45,7 @@ const AdminSidebar = ({ onClose }) => {
     ];
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto bg-white border-r border-slate-100 shadow-xl lg:shadow-none font-sans">
+        <div className="flex flex-col h-full overflow-y-auto bg-white border-r border-slate-100 shadow-xl lg:shadow-none font-sans [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="p-6 md:p-8">
                 <div className="flex items-center justify-between mb-8 md:mb-10">
                     <div className="flex items-center gap-3">

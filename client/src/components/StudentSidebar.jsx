@@ -41,6 +41,7 @@ const StudentSidebar = ({ mobileOpen, setMobileOpen, onLogout }) => {
       <aside className={`
         fixed inset-y-0 left-0 z-[1001] w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
         lg:translate-x-0 lg:static lg:inset-0
+        [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
