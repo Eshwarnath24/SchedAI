@@ -57,6 +57,45 @@ const LeaveForm = () => {
   const approvedCount = getStatsCount('Approved');
   const rejectedCount = getStatsCount('Rejected');
 
+  const exportToCSV = () => {
+    const headers = ['Faculty ID', 'Name', 'Department', 'Leave Type', 'From Date', 'To Date', 'Duration', 'Status', 'Substitute'];
+    const rows = filteredData.map(item => [
+      item.id, item.name, item.dept, item.type, item.from, item.to, item.duration, item.status, item.substitute
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leave_requests_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToPDF = () => {
+    const rows = filteredData.map(item => `
+      <tr>
+        <td>${item.id}</td><td>${item.name}</td><td>${item.dept}</td>
+        <td>${item.type}</td><td>${item.from}</td><td>${item.to}</td>
+        <td>${item.duration}</td><td>${item.status}</td><td>${item.substitute}</td>
+      </tr>`).join('');
+    const html = `<html><head><title>Leave Requests</title>
+      <style>body{font-family:sans-serif;padding:20px}h2{color:#9b1c31}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}
+      th{background:#9b1c31;color:white}</style></head>
+      <body><h2>Leave Requests Report</h2>
+      <p>Generated: ${new Date().toLocaleString()}</p>
+      <table><thead><tr>
+        <th>ID</th><th>Name</th><th>Dept</th><th>Type</th>
+        <th>From</th><th>To</th><th>Duration</th><th>Status</th><th>Substitute</th>
+      </tr></thead><tbody>${rows}</tbody></table></body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.print();
+  };
+
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -326,10 +365,10 @@ const LeaveForm = () => {
         <div style={styles.reportCard}>
           <h3 style={styles.reportTitle}>Download Report</h3>
           <div style={styles.downloadReport}>
-            <button style={{ ...styles.btnDownload, color: '#047857', borderColor: '#047857' }}>
+            <button onClick={exportToCSV} style={{ ...styles.btnDownload, color: '#047857', borderColor: '#047857' }}>
               <FileSpreadsheet size={18} /> Excel
             </button>
-            <button style={{ ...styles.btnDownload, color: '#9b1c31', borderColor: '#9b1c31' }}>
+            <button onClick={exportToPDF} style={{ ...styles.btnDownload, color: '#9b1c31', borderColor: '#9b1c31' }}>
               <FileText size={18} /> PDF
             </button>
           </div>

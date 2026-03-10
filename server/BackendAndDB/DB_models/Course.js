@@ -21,6 +21,10 @@ const courseSchema = new mongoose.Schema({
 
   department: { type: String, required: true },
 
+  // Allocation fields
+  ltp: { type: String, default: '3-0-0' },           // e.g., '3-1-0'
+  category: { type: String, enum: ['Core', 'PE', 'FE', 'Audit'], default: 'Core' },
+
   // Lab assistant assigned to this course (for Lab courses)
   labAssistant: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 });

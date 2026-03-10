@@ -410,3 +410,44 @@ export const fetchFacultyWorkloadReport = async (facultyId, forceRefresh = false
     }
 };
 
+// --- Course (Allocation) APIs ---
+
+export const fetchCourses = async () => {
+    const res = await fetch(`${API_BASE}/courses`, {
+        headers: { ...getAuthHeaders() },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch courses: ${res.statusText}`);
+    return res.json(); // { year1: {1: [...], 2: [...]}, year2: {...}, ... }
+};
+
+export const createCourse = async (data) => {
+    const res = await fetch(`${API_BASE}/courses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to create course');
+    return result;
+};
+
+export const updateCourse = async (id, data) => {
+    const res = await fetch(`${API_BASE}/courses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to update course');
+    return result;
+};
+
+export const deleteCourse = async (id) => {
+    const res = await fetch(`${API_BASE}/courses/${id}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() },
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to delete course');
+    return result;
+};

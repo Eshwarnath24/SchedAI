@@ -46,6 +46,7 @@ const scheduleRoutes = require('./BackendAndDB/routes/scheduleRoutes');
 const authRoutes = require('./BackendAndDB/routes/authRoutes');
 const announcementRoutes = require('./BackendAndDB/routes/announcementRoutes');
 const dashboardRoutes = require('./BackendAndDB/routes/dashboardRoutes');
+const courseRoutes = require('./BackendAndDB/routes/courseRoutes');
 
 // Use Routes
 app.use('/api/leaves', leaveRoutes);
@@ -54,6 +55,7 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/courses', courseRoutes);
 
 // ── Notification Module ────────────────────────────────────────────────────────
 // Registers event listeners for class.cancelled and leave.approved.

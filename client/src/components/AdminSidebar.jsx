@@ -21,6 +21,8 @@ const AdminSidebar = ({ onClose }) => {
 
     const activeTab = (() => {
         if (location.pathname.includes('/admin/reports')) return 'reports';
+        if (location.pathname.includes('/admin/timetable')) return 'timetable';
+        if (location.pathname.includes('/admin/announcements')) return 'announcements';
         if (location.pathname.includes('/map')) return 'map';
         if (location.state?.tab) return location.state.tab;
         if (location.pathname.includes('leave')) return 'leave-form';
@@ -35,12 +37,12 @@ const AdminSidebar = ({ onClose }) => {
 
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, action: () => navigate('/admin/dashboard', { state: { tab: 'dashboard' } }) },
-        { id: 'timetable', label: 'Timetable', icon: Calendar, action: () => { } },
+        { id: 'timetable', label: 'Timetable', icon: Calendar, action: () => navigate('/admin/timetable') },
         { id: 'workload', label: 'Workload', icon: BarChart, action: () => { } },
         { id: 'reports', label: 'Reports', icon: Activity, action: () => navigate('/admin/reports') },
         { id: 'leave-form', label: 'Leave Form', icon: FileText, action: () => navigate('/admin/dashboard', { state: { tab: 'leave-form' } }) },
         { id: 'allocations', label: 'Allocations', icon: Users, action: () => navigate('/admin/dashboard', { state: { tab: 'allocations' } }) },
-        { id: 'announcements', label: 'Announcements', icon: Megaphone, action: () => { } },
+        { id: 'announcements', label: 'Announcements', icon: Megaphone, action: () => navigate('/admin/announcements') },
         { id: 'map', label: 'Map', icon: MapPin, action: () => navigate('/map') }
     ];
 

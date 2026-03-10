@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { fetchCourses, createCourse as createCourseApi, updateCourse as updateCourseApi, deleteCourse as deleteCourseApi, fetchTeachers } from '../../utils/api';
 import {
     Plus,
     Pencil,
@@ -26,81 +27,57 @@ const CATEGORY_NAMES = {
     'Audit': 'Audit Course'
 };
 
+// Empty structure for all 4 years / 8 semesters
+const EMPTY_COURSE_DATA = {
+    year1: { 1: [], 2: [] },
+    year2: { 3: [], 4: [] },
+    year3: { 5: [], 6: [] },
+    year4: { 7: [], 8: [] },
+};
+
 const Allocation = () => {
-    // --- Mock Data ---
-    const initialData = {
-        year1: {
-            1: [
-                { code: '24MAT101', title: 'Calculus', ltp: '3-1-0', credits: '4', category: 'Core' },
-                { code: '24PHY101', title: 'Engineering Physics', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '24CSE101', title: 'Problem Solving & C Programming', ltp: '3-0-2', credits: '4', category: 'Core' }
-            ], 2: [
-                { code: '24MAT102', title: 'Linear Algebra', ltp: '3-1-0', credits: '4', category: 'Core' },
-                { code: '24CSE102', title: 'Data Structures', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '24ENG101', title: 'Professional Communication', ltp: '2-0-2', credits: '3', category: 'Core' }
-            ]
-        },
-        year2: {
-            3: [
-                { code: '19CSE201', title: 'Computer Organization & Architecture', ltp: '3-1-0', credits: '4', category: 'Core' },
-                { code: '19CSE202', title: 'Object Oriented Programming', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '19MAT201', title: 'Discrete Mathematics', ltp: '3-1-0', credits: '4', category: 'Core' },
-                { code: '19HUM201', title: 'Environmental Sciences', ltp: '2-0-0', credits: 'P/F', category: 'Audit' }
-            ], 4: [
-                { code: '19CSE211', title: 'Design & Analysis of Algorithms', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '19CSE212', title: 'Software Engineering', ltp: '3-0-0', credits: '3', category: 'Core' },
-                { code: '19CSE213', title: 'Java Programming', ltp: '2-0-2', credits: '3', category: 'Core' },
-                { code: '19AVP201', title: 'Amrita Values Program', ltp: '1-0-0', credits: 'P/F', category: 'Audit' }
-            ]
-        },
-        year3: {
-            5: [
-                { code: '19CSE301', title: 'Operating Systems', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '19CSE302', title: 'Database Management', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '19CSE303', title: 'Theory of Computation', ltp: '3-1-0', credits: '4', category: 'Core' },
-                { code: '19CSE331', title: 'Data Mining', ltp: '3-0-0', credits: '3', category: 'PE' },
-                { code: '19SSK301', title: 'Soft Skills I', ltp: '1-0-2', credits: 'P/F', category: 'Audit' }
-            ], 6: [
-                { code: '19CSE311', title: 'Computer Networks', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '19CSE312', title: 'Compiler Design', ltp: '3-0-2', credits: '4', category: 'Core' },
-                { code: '19CSE332', title: 'Cloud Computing', ltp: '3-0-0', credits: '3', category: 'PE' },
-                { code: '19OEL301', title: 'Photography', ltp: '2-0-0', credits: '2', category: 'FE' },
-                { code: '19SSK302', title: 'Soft Skills II', ltp: '1-0-2', credits: 'P/F', category: 'Audit' }
-            ]
-        },
-        year4: {
-            7: [
-                { code: '19CSE401', title: 'Artificial Intelligence', ltp: '3-0-0', credits: '3', category: 'Core' },
-                { code: '19CSE431', title: 'Blockchain Technologies', ltp: '3-0-0', credits: '3', category: 'PE' },
-                { code: '19CSE432', title: 'Natural Language Processing', ltp: '3-0-0', credits: '3', category: 'PE' },
-                { code: '19OEL401', title: 'Financial Management', ltp: '3-0-0', credits: '3', category: 'FE' },
-                { code: '19CSE491', title: 'Project Phase I', ltp: '0-0-12', credits: '4', category: 'Core' }
-            ], 8: [
-                { code: '19CSE433', title: 'Cyber Security', ltp: '3-0-0', credits: '3', category: 'PE' },
-                { code: '19CSE434', title: 'Internet of Things', ltp: '3-0-0', credits: '3', category: 'PE' },
-                { code: '19CSE492', title: 'Project Phase II', ltp: '0-0-24', credits: '8', category: 'Core' }
-            ]
-        }
-    };
-
-    const initialFaculties = [
-        { name: 'Dr. Amitabh Mukherjee', status: 'Not Sent' },
-        { name: 'Prof. Lakshmi Narayan', status: 'Not Sent' },
-        { name: 'Dr. Sunita Deshmukh', status: 'Not Sent' },
-        { name: 'Dr. Ramesh Chandra', status: 'Not Sent' },
-        { name: 'Dr. Gitanjali Rao', status: 'Not Sent' },
-        { name: 'Prof. Venkat Subramanian', status: 'Not Sent' }
-    ];
-
     // --- State ---
-    const [courseData, setCourseData] = useState(initialData);
-    const [faculties, setFaculties] = useState(initialFaculties);
+    const [courseData, setCourseData] = useState(EMPTY_COURSE_DATA);
+    const [faculties, setFaculties] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [currentYear, setCurrentYear] = useState(1);
     const [currentSemType, setCurrentSemType] = useState('odd');
     const [isSending, setIsSending] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const [editingConfig, setEditingConfig] = useState({ semNum: null, index: null });
+    const [editingConfig, setEditingConfig] = useState({ semNum: null, courseId: null });
     const [formData, setFormData] = useState({ code: '', title: '', ltp: '', credits: '4', category: 'Core' });
+
+    // Helper: merge API response into the EMPTY_COURSE_DATA structure
+    const applyCourses = (raw) => {
+        const merged = JSON.parse(JSON.stringify(EMPTY_COURSE_DATA));
+        if (raw) {
+            Object.keys(raw).forEach(yKey => {
+                if (merged[yKey]) merged[yKey] = { ...merged[yKey], ...raw[yKey] };
+            });
+        }
+        return merged;
+    };
+
+    // Load courses + faculty list from backend
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            try {
+                const [courseRes, teacherRes] = await Promise.all([fetchCourses(), fetchTeachers()]);
+                setCourseData(applyCourses(courseRes?.courses || courseRes));
+                if (teacherRes && teacherRes.length > 0) {
+                    setFaculties(teacherRes.map(t => ({ _id: t._id, name: t.name, status: 'Not Sent' })));
+                }
+            } catch (err) {
+                console.error('[Allocation] Failed to load:', err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // --- Computed ---
     const completedCount = faculties.filter(f => f.status === 'Completed').length;
@@ -117,70 +94,70 @@ const Allocation = () => {
         setIsSending(true);
         setTimeout(() => {
             setFaculties(prev => prev.map(f => ({ ...f, status: 'Pending' })));
-            simulateResponses();
+            // Simulate responses one by one
+            faculties.forEach((f, index) => {
+                const delay = (2000 + Math.random() * 8000) * (index + 1) / 2;
+                setTimeout(() => {
+                    setFaculties(prev => {
+                        const next = [...prev];
+                        if (next[index]) next[index] = { ...next[index], status: 'Completed' };
+                        return next;
+                    });
+                }, delay);
+            });
         }, 1500);
     };
 
-    const simulateResponses = () => {
-        initialFaculties.forEach((f, index) => {
-            const delay = 2000 + Math.random() * 8000;
-            setTimeout(() => {
-                setFaculties(prev => {
-                    const next = [...prev];
-                    next[index].status = 'Completed';
-                    return next;
-                });
-            }, delay * (index + 1) / 2);
-        });
-    };
-
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
-        const { semNum, index } = editingConfig;
-
-        setCourseData(prev => {
-            const next = { ...prev };
-            const yearKey = `year${currentYear}`;
-            const courses = [...next[yearKey][semNum]];
-
-            if (index !== null) {
-                courses[index] = formData;
+        const { semNum, courseId } = editingConfig;
+        setSaving(true);
+        try {
+            const payload = {
+                code: formData.code,
+                title: formData.title,
+                ltp: formData.ltp,
+                credits: formData.credits,
+                category: formData.category,
+                semester: semNum,
+            };
+            if (courseId) {
+                await updateCourseApi(courseId, payload);
             } else {
-                courses.push(formData);
+                await createCourseApi(payload);
             }
-
-            next[yearKey][semNum] = courses;
-            return next;
-        });
-
-        setShowModal(false);
-        setEditingConfig({ semNum: null, index: null });
+            const courseRes = await fetchCourses();
+            setCourseData(applyCourses(courseRes?.courses || courseRes));
+        } catch (err) {
+            alert('Failed to save: ' + err.message);
+        } finally {
+            setSaving(false);
+            setShowModal(false);
+            setEditingConfig({ semNum: null, courseId: null });
+        }
     };
 
-    const deleteCourse = (semNum, index) => {
-        if (window.confirm('Are you sure you want to remove this course?')) {
-            setCourseData(prev => {
-                const next = { ...prev };
-                const yearKey = `year${currentYear}`;
-                const courses = [...next[yearKey][semNum]];
-                courses.splice(index, 1);
-                next[yearKey][semNum] = courses;
-                return next;
-            });
+    const handleDeleteCourse = async (course) => {
+        if (!course._id) return;
+        if (!window.confirm('Are you sure you want to remove this course?')) return;
+        try {
+            await deleteCourseApi(course._id);
+            const courseRes = await fetchCourses();
+            setCourseData(applyCourses(courseRes?.courses || courseRes));
+        } catch (err) {
+            alert('Failed to delete: ' + err.message);
         }
     };
 
     const openAddModal = (semNum) => {
         setFormData({ code: '', title: '', ltp: '', credits: '4', category: 'Core' });
-        setEditingConfig({ semNum, index: null });
+        setEditingConfig({ semNum, courseId: null });
         setShowModal(true);
     };
 
-    const openEditModal = (semNum, index) => {
-        const yearKey = `year${currentYear}`;
-        const course = courseData[yearKey][semNum][index];
-        setFormData(course);
-        setEditingConfig({ semNum, index });
+    const openEditModal = (semNum, course) => {
+        setFormData({ code: course.code, title: course.title, ltp: course.ltp, credits: course.credits, category: course.category });
+        setEditingConfig({ semNum, courseId: course._id });
         setShowModal(true);
     };
 
@@ -206,6 +183,17 @@ const Allocation = () => {
             return a.code.localeCompare(b.code);
         });
     };
+
+    if (loading) {
+        return (
+            <div className="h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-slate-400">
+                    <div className="w-10 h-10 border-4 border-[#9b1c31]/30 border-t-[#9b1c31] rounded-full animate-spin"></div>
+                    <p className="text-sm font-bold">Loading courses...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -268,7 +256,7 @@ const Allocation = () => {
                         {!allReceived ? (
                             <button
                                 onClick={sendForms}
-                                disabled={isSending || faculties[0].status === 'Pending'}
+                                disabled={isSending || faculties[0]?.status === 'Pending'}
                                 className="px-8 py-4 bg-white text-[#9b1c31] rounded-2xl font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
                             >
                                 {isSending ? 'SENDING...' : (faculties[0].status === 'Pending' ? 'WAITING FOR RESPONSES...' : 'SEND FORMS TO ALL FACULTY')}
@@ -495,9 +483,10 @@ const Allocation = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-2 px-12 py-4 bg-[#9b1c31] text-white rounded-2xl font-black text-sm shadow-xl shadow-[#9b1c31]/20 hover:bg-[#801629] transition-colors"
+                                    disabled={saving}
+                                    className="flex-2 px-12 py-4 bg-[#9b1c31] text-white rounded-2xl font-black text-sm shadow-xl shadow-[#9b1c31]/20 hover:bg-[#801629] transition-colors disabled:opacity-60"
                                 >
-                                    SAVE COURSE
+                                    {saving ? 'SAVING...' : 'SAVE COURSE'}
                                 </button>
                             </div>
                         </form>
