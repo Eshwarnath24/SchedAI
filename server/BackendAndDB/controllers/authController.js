@@ -4,6 +4,8 @@ const Course = require('../DB_models/Course');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const otpStore = {};
+
 const JWT_SECRET = process.env.JWT_SECRET || 'schedai_jwt_secret_key_2026_amrita';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
@@ -348,4 +350,163 @@ const getMe = async (req, res) => {
     }
 };
 
-module.exports = { loginUser, loginStudent, getMe, registerUser, parseStudentRollNumber };
+// ==========================================
+// POST /api/auth/forgot-password
+// ==========================================
+const forgotPassword = async (req, res) => {
+    try {
+        let { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: "Email is required." });
+        }
+
+        email = email.trim().toLowerCase();
+
+        let userType = null;
+        let account = null;
+
+        // Student email
+        if (email.endsWith("@cb.students.amrita.edu")) {
+            userType = "student";
+            account = await Student.findOne({ email });
+        }
+
+        // Faculty/Admin email
+        else if (email.endsWith(".cb.amrita.edu")) {
+            userType = "faculty";
+            account = await User.findOne({ email });
+        }
+
+        else {
+            return res.status(400).json({
+                error: "Invalid Amrita email format."
+            });
+        }
+
+        if (!account) {
+            return res.status(404).json({
+                error: "Account not found."
+            });
+        }
+
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Save OTP in memory
+        otpStore[email] = {
+            otp,
+            expires: Date.now() + 2 * 60 * 1000 // 2 minutes
+        };
+
+        console.log("🔐 OTP for", email, ":", otp);
+
+        res.json({
+            success: true,
+            message: "OTP generated. Check server console."
+        });
+
+    } catch (err) {
+        console.error("Forgot password error:", err);
+        res.status(500).json({ error: "Server error." });
+    }
+};
+
+// ==========================================
+// POST /api/auth/verify-otp
+// ==========================================
+const verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const record = otpStore[email];
+
+        if (!record) {
+            return res.status(400).json({
+                error: "No OTP request found."
+            });
+        }
+
+        if (Date.now() > record.expires) {
+            delete otpStore[email];
+            return res.status(400).json({
+                error: "OTP expired."
+            });
+        }
+
+        if (record.otp !== otp) {
+            return res.status(400).json({
+                error: "Invalid OTP."
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "OTP verified."
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error." });
+    }
+};
+
+// ==========================================
+// POST /api/auth/reset-password
+// ==========================================
+const resetPassword = async (req, res) => {
+    try {
+        let { email, newPassword } = req.body;
+
+        if (!email || !newPassword) {
+            return res.status(400).json({
+                error: "Email and new password required."
+            });
+        }
+
+        email = email.trim().toLowerCase();
+
+        let account = null;
+
+        if (email.endsWith("@cb.students.amrita.edu")) {
+            account = await Student.findOne({ email });
+        } else {
+            account = await User.findOne({ email });
+        }
+
+        if (!account) {
+            return res.status(404).json({
+                error: "Account not found."
+            });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        account.password = hashedPassword;
+        await account.save();
+
+        delete otpStore[email];
+
+        res.json({
+            success: true,
+            message: "Password updated successfully."
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error." });
+    }
+};
+
+module.exports = {
+    loginUser,
+    loginStudent,
+    getMe,
+    registerUser,
+    parseStudentRollNumber,
+    forgotPassword,
+    verifyOtp,
+    resetPassword
+};

@@ -12,6 +12,7 @@ import AdminReport from "./Pages/Admin/Report";
 import AuthPage from "./Pages/AuthPage";
 import { AppContext } from "./context/AppContext";
 
+import ForgotPasswordPageWrapper from "./Pages/ForgotPassword";
 import StudentDashboard from "./Pages/Student/Dashboard";
 import StudentAnnouncements from "./Pages/Student/Announcements";
 import SectionTimeTable from "./Pages/Student/SectionTimeTable";
@@ -35,6 +36,7 @@ const App = () => {
 
   return (
     <Routes>
+        <Route path="/forgot-password" element={<ForgotPasswordPageWrapper />} />
       <Route path="/auth" element={!isAuthenticated ? <AuthPage /> : <Navigate to="/dashboard" />} />
       <Route path="/" element={!isAuthenticated ? <Navigate to="/auth" /> : <Navigate to="/dashboard" />} />
 

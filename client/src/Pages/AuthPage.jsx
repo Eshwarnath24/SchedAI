@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import {
@@ -15,8 +15,11 @@ import {
     Loader2
 } from 'lucide-react';
 import { parseStudentRollNumber, STUDENT_ROLL_FORMAT } from '../utils/rollNumber';
+import amritaLogo from '../assets/amrita_logo.png';
 
 const AuthPage = () => {
+    // Forgot Password Modal State
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
     const navigate = useNavigate();
     const { login } = useContext(AppContext);
     const [currentRole, setCurrentRole] = useState('student');
@@ -50,9 +53,10 @@ const AuthPage = () => {
         setToastMessage({ title, message });
         setToastType(type);
         setShowToast(true);
+        setTimeout(() => {
+            setShowToast(false);
+        }, 2000);
     };
-
-
 
     const selectRole = (role) => {
         setCurrentRole(role);
@@ -99,7 +103,6 @@ const AuthPage = () => {
             studentDetails = parsed;
         }
 
-        // Admin types full email directly; others get domain suffix appended
         const fullEmail = currentRole === 'admin' ? trimmedId : `${normalizedIdentifier}${getEmailDomain()}`;
         setIsLoggingIn(true);
         const loginResult = await login(fullEmail, password, currentRole, normalizedIdentifier, studentDetails);
@@ -113,7 +116,6 @@ const AuthPage = () => {
         const roleCapitalized = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
         showToastNotification('Welcome Back!', `Logged in successfully as ${roleCapitalized}`);
 
-        // Navigate to dashboard after a brief delay
         setTimeout(() => {
             setShowToast(false);
             setIsLoggingIn(false);
@@ -139,35 +141,29 @@ const AuthPage = () => {
             backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)',
             backgroundSize: '24px 24px'
         }}>
-            {/* Main Container */}
             <div className="w-full min-h-screen md:min-h-0 md:h-[90vh] md:w-[95vw] lg:w-[1200px] bg-white md:rounded-[2.5rem] shadow-none md:shadow-2xl flex flex-col md:flex-row overflow-hidden relative ring-1 ring-gray-900/5">
 
-                {/* Left Panel: Branding (Hidden on Mobile) */}
                 <div className="hidden md:flex md:w-5/12 lg:w-1/2 relative flex-col p-10 lg:p-16 text-white overflow-hidden justify-between" style={{
                     background: 'linear-gradient(135deg, #a50034 0%, #7a0026 100%)'
                 }}>
-                    {/* Background Elements */}
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                     <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-yellow-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none"></div>
 
-                    {/* Geometric Patterns */}
                     <div className="absolute inset-0 opacity-10" style={{
                         backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
                         backgroundSize: '32px 32px'
                     }}></div>
 
-                    {/* Top: Logo */}
-                    <div className="relative z-10 flex items-center gap-5 animate-fadeInUp">
-                        <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-lg shrink-0">
-                            <span className="font-bold text-3xl font-serif">A</span>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-bold text-lg tracking-[0.15em]">AMRITA</span>
-                            <span className="text-[11px] opacity-80 tracking-[0.25em] font-light uppercase">Vishwa Vidyapeetham</span>
-                        </div>
+                    <div className="flex items-center gap-4">
+                        <img
+                            src={amritaLogo}
+                            alt="Amrita Logo"
+                            className="min-w-[80px] w-20 md:w-40 h-auto object-contain"
+                            style={{ maxWidth: '140px', height: 'auto' }}
+                        />
+                        <span className="font-bold text-2xl md:text-3xl tracking-wide">Amrita Portal</span>
                     </div>
 
-                    {/* Middle: Content */}
                     <div className="relative z-10 animate-fadeInUp">
                         <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-8 tracking-tight">
                             Inspiring <br />
@@ -179,7 +175,6 @@ const AuthPage = () => {
                             </span>
                         </h1>
 
-                        {/* Dynamic Quote Box */}
                         <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl transition-all duration-500 hover:bg-white/15 group max-w-md">
                             <div className="flex gap-5 items-start">
                                 <div className="p-3 bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-inner">
@@ -193,9 +188,8 @@ const AuthPage = () => {
                         </div>
                     </div>
 
-                    {/* Bottom: Footer */}
                     <div className="relative z-10 text-xs text-white/50 flex justify-between items-center pt-8 border-t border-white/10 animate-fadeInUp">
-                        <span className="font-light tracking-wide">© 2025 Amrita Vishwa Vidyapeetham</span>
+                        <span className="font-light tracking-wide">© 2026 Amrita Vishwa Vidyapeetham</span>
                         <div className="flex gap-6">
                             <a href="#" className="hover:text-white transition-colors duration-200">Privacy Policy</a>
                             <a href="#" className="hover:text-white transition-colors duration-200">Terms of Use</a>
@@ -204,10 +198,8 @@ const AuthPage = () => {
                 </div>
 
 
-                {/* Right Panel: Auth Forms */}
                 <div className="w-full md:w-7/12 lg:w-1/2 bg-white flex flex-col relative h-full">
 
-                    {/* Mobile Header (Visible only on small screens) */}
                     <div className="md:hidden px-6 py-5 text-white flex justify-between items-center shadow-lg z-20 shrink-0 sticky top-0" style={{
                         background: 'linear-gradient(135deg, #a50034 0%, #7a0026 100%)'
                     }}>
@@ -217,27 +209,22 @@ const AuthPage = () => {
                             </div>
                             <span className="font-bold text-base tracking-wide">Amrita Portal</span>
                         </div>
-                        {/* Simple Role Indicator for Mobile */}
                         <div className="text-[10px] bg-white/20 px-2 py-1 rounded-full uppercase tracking-wider font-semibold">
                             <span>{currentRole}</span>
                         </div>
                     </div>
 
-                    {/* Content Area - Scrollable Container */}
                     <div className="flex-1 flex flex-col justify-center h-full max-w-xl mx-auto w-full overflow-y-auto">
 
                         <div className="p-6 md:p-14 lg:p-20 flex flex-col h-full md:justify-center">
 
-                            {/* Header */}
                             <div className="mb-8 md:mb-10 shrink-0 animate-fadeInUp">
                                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-3">Welcome Back</h2>
                                 <p className="text-sm md:text-base text-gray-500">Please select your role to access the dashboard.</p>
                             </div>
 
-                            {/* Role Selection */}
                             <div className="mb-8 md:mb-10 shrink-0 animate-fadeInUp">
                                 <div className="grid grid-cols-3 gap-3 md:gap-5">
-                                    {/* Student */}
                                     <button
                                         onClick={() => selectRole('student')}
                                         className={`group relative p-3 md:p-4 rounded-xl md:rounded-2xl border flex flex-col items-center gap-2 md:gap-3 shadow-sm cursor-pointer outline-none transition-all duration-300 ${currentRole === 'student'
@@ -259,7 +246,6 @@ const AuthPage = () => {
                                         </div>
                                     </button>
 
-                                    {/* Teacher */}
                                     <button
                                         onClick={() => selectRole('teacher')}
                                         className={`group relative p-3 md:p-4 rounded-xl md:rounded-2xl border flex flex-col items-center gap-2 md:gap-3 shadow-sm cursor-pointer outline-none transition-all duration-300 ${currentRole === 'teacher'
@@ -281,7 +267,6 @@ const AuthPage = () => {
                                         </div>
                                     </button>
 
-                                    {/* Admin */}
                                     <button
                                         onClick={() => selectRole('admin')}
                                         className={`group relative p-3 md:p-4 rounded-xl md:rounded-2xl border flex flex-col items-center gap-2 md:gap-3 shadow-sm cursor-pointer outline-none transition-all duration-300 ${currentRole === 'admin'
@@ -305,11 +290,9 @@ const AuthPage = () => {
                                 </div>
                             </div>
 
-                            {/* Forms Area */}
                             <div className="relative w-full animate-fadeInUp">
                                 <form onSubmit={handleLogin} className="space-y-5 md:space-y-6 flex flex-col">
                                     <div className="space-y-5 md:space-y-6">
-                                        {/* Roll Number / Email Input */}
                                         <div className="relative">
                                             <div className="relative flex items-center">
                                                 <input
@@ -331,7 +314,6 @@ const AuthPage = () => {
                                             </div>
                                         </div>
 
-                                        {/* Password Input */}
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
@@ -373,7 +355,13 @@ const AuthPage = () => {
                                                 </div>
                                                 <span className="text-sm text-gray-500 font-medium group-hover:text-gray-700 transition-colors">Remember me</span>
                                             </label>
-                                            <a href="#" className="text-sm text-[#a50034] font-semibold hover:text-red-800 transition-colors">Forgot Password?</a>
+                                            <button
+                                                type="button"
+                                                className="text-sm text-[#a50034] font-semibold hover:text-red-800 transition-colors focus:outline-none"
+                                                onClick={() => navigate('/forgot-password')}
+                                            >
+                                                Forgot Password?
+                                            </button>
                                         </div>
                                     </div>
 
@@ -398,7 +386,6 @@ const AuthPage = () => {
                                 </form>
                             </div>
 
-                            {/* Extra Help Link */}
                             <div className="mt-8 md:mt-auto md:pt-6 text-center animate-fadeInUp pb-8 md:pb-0">
                                 <p className="text-xs text-gray-400">Having trouble logging in? <a href="#" className="text-gray-600 font-semibold hover:underline">Contact Support</a></p>
                             </div>
@@ -407,7 +394,6 @@ const AuthPage = () => {
                 </div>
             </div>
 
-            {/* Toast Notification */}
             {showToast && (
                 <div className={`fixed bottom-6 left-6 right-6 md:left-auto md:bottom-8 md:right-8 transform transition-all duration-400 z-50 bg-white border-l-4 ${toastType === 'error' ? 'border-red-500' : 'border-[#a50034]'} shadow-2xl rounded-xl p-4 md:p-5 flex items-center gap-4 md:min-w-[360px] pr-8 ring-1 ring-black/5`}>
                     <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${toastType === 'error' ? 'bg-red-50 text-red-600' : 'bg-red-50 text-[#a50034]'} flex items-center justify-center shrink-0`}>
