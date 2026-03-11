@@ -4,6 +4,7 @@
   "description": "Backend server for SchedAI application",
   "main": "server.js",
   "scripts": {
+    "build-rust": "cd scheduler_worker && cargo build --release",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "server": "nodemon server.js",

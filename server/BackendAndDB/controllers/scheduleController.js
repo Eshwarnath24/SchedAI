@@ -147,7 +147,10 @@ const generateSchedule = async () => {
 
     // D. SPAWN RUST PROCESS
     console.log("🔥 Spawning Rust Worker...");
-    const rustBinaryPath = path.join(__dirname, 'scheduler_worker.exe');
+    const rustBinaryPath = path.join(
+        __dirname,
+        '../../scheduler_worker/target/release/scheduler_worker'
+    );
 
     return new Promise((resolve, reject) => {
         const child = spawn(rustBinaryPath);
