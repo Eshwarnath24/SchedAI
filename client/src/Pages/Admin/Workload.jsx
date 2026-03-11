@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchTeachers, fetchTeacherSchedule } from '../../utils/api';
 import {
     BarChart3, Menu, Search, AlertCircle, User, Settings2, Download, Filter,
     MoreHorizontal, Info, CheckCircle2, Activity, PieChart, Users,
@@ -129,40 +130,57 @@ const AdminWorkload = () => {
         'Senior Lecturer': 15
     });
 
-    // Mock Faculty Workload Data enhanced with US 4, 8, 14
-    const [facultyData] = useState([
-        {
-            id: 1, name: 'Dr. Arvind Krishnan', dept: 'CSE', rank: 'Associate Professor',
-            currentHours: 12, maxHours: 12, efficiency: 95, status: 'Balanced',
-            expertise: ['Networking', 'Security'], contractDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-            isNewPrep: true,
-            avatar: 'https://ui-avatars.com/api/?name=Arvind+Krishnan&background=8B0000&color=fff&bold=true'
-        },
-        {
-            id: 2, name: 'Dr. Priya Sharma', dept: 'ECE', rank: 'Assistant Professor',
-            currentHours: 10, maxHours: 15, efficiency: 100, status: 'Balanced',
-            expertise: ['VLSI', 'Digital Design'], contractDays: ['Tue', 'Thu'],
-            avatar: 'https://ui-avatars.com/api/?name=Priya+Sharma&background=0f172a&color=fff&bold=true'
-        },
-        {
-            id: 3, name: 'Dr. Rajesh Kumar', dept: 'CSE', rank: 'Professor',
-            currentHours: 5, maxHours: 8, efficiency: 80, status: 'Under-utilized',
-            expertise: ['Thermodynamics', 'AutoCAD'], contractDays: ['Mon', 'Wed', 'Fri'],
-            avatar: 'https://ui-avatars.com/api/?name=Rajesh+Kumar&background=334155&color=fff&bold=true'
-        },
-        {
-            id: 4, name: 'Dr. Sunitha V', dept: 'CE', rank: 'Assistant Professor',
-            currentHours: 14, maxHours: 15, efficiency: 90, status: 'Balanced',
-            expertise: ['Structural Eng', 'Concrete'], contractDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-            avatar: 'https://ui-avatars.com/api/?name=Sunitha+V&background=8B0000&color=fff&bold=true'
-        },
-        {
-            id: 5, name: 'Dr. Vikram Seth', dept: 'CSE', rank: 'Professor',
-            currentHours: 7, maxHours: 8, efficiency: 100, status: 'Balanced',
-            expertise: ['AI', 'Data Ethics'], contractDays: ['Mon', 'Tue', 'Wed'],
-            avatar: 'https://ui-avatars.com/api/?name=Vikram+Seth&background=0f172a&color=fff&bold=true'
-        },
-    ]);
+    const [facultyData, setFacultyData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+
+    useEffect(() => {
+        const loadFacultyWorkload = async () => {
+            setLoading(true);
+            setLoadError(null);
+            try {
+                const teachers = await fetchTeachers();
+                const enriched = await Promise.all(
+                    teachers.map(async (t) => {
+                        let currentHours = 0;
+                        try {
+                            const schedData = await fetchTeacherSchedule(t._id);
+                            if (schedData?.schedule) {
+                                // Grid has both 'Monday' and 'MONDAY' keys — only count proper-case to avoid double-counting
+                                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
+                                    const daySlots = schedData.schedule[day];
+                                    if (daySlots && typeof daySlots === 'object') {
+                                        currentHours += Object.keys(daySlots).length;
+                                    }
+                                });
+                            }
+                        } catch (_) {}
+                        const maxHours = maxHoursConfig[t.rank] || 15;
+                        const load = maxHours > 0 ? (currentHours / maxHours) * 100 : 0;
+                        return {
+                            id: t._id,
+                            name: t.name,
+                            dept: t.department || 'N/A',
+                            rank: t.rank || 'Faculty',
+                            currentHours,
+                            maxHours,
+                            efficiency: Math.min(Math.round(load), 100),
+                            status: load > 100 ? 'Overloaded' : load < 75 ? 'Under-utilized' : 'Balanced',
+                            expertise: [],
+                            contractDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=8B0000&color=fff&bold=true`,
+                        };
+                    })
+                );
+                setFacultyData(enriched);
+            } catch (err) {
+                setLoadError(err.message || 'Failed to load faculty data');
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadFacultyWorkload();
+    }, []);
 
     // US 7: Under-utilized Filter Logic
     const filteredFaculty = facultyData.filter(f => {
@@ -217,6 +235,22 @@ const AdminWorkload = () => {
                 </header>
 
                 <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
+
+                    {/* Loading / Error state */}
+                    {loading && (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="w-10 h-10 border-4 border-[#8B0000] border-t-transparent rounded-full animate-spin" />
+                            <span className="ml-4 text-slate-500 font-semibold">Loading faculty data...</span>
+                        </div>
+                    )}
+                    {!loading && loadError && (
+                        <div className="flex items-center gap-3 p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 mb-8">
+                            <AlertCircle size={20} />
+                            <span className="font-semibold text-sm">{loadError}</span>
+                        </div>
+                    )}
+                    {!loading && !loadError && (
+                    <>
 
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -482,6 +516,7 @@ const AdminWorkload = () => {
                         </div>
                     </div>
 
+                    </>) }
                 </div>
 
                 <footer className="px-12 py-12 text-center border-t border-slate-100 bg-white mt-12">

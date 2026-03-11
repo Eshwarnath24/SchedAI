@@ -15,7 +15,7 @@ const getCoursesForPreferences = async (req, res) => {
         const courses = await Course.find({
             semester: { $in: activeSems },
             type: { $ne: 'CIR' } // CIR courses are auto-assigned, not preference-based
-        }).select('code name credits type semester duration').sort({ semester: 1, code: 1 });
+        }).select('code name credits type semester duration category ltp').sort({ semester: 1, code: 1 });
 
         // Group by semester
         const grouped = {};
@@ -28,7 +28,8 @@ const getCoursesForPreferences = async (req, res) => {
                     title: c.name,
                     credits: c.credits,
                     type: c.type,
-                    ltp: c.duration === 2 ? '0-0-3' : '3-0-0', // approximate L-T-P from duration
+                    category: c.category || 'Core',
+                    ltp: c.ltp || (c.duration === 2 ? '0-0-3' : '3-0-0'),
                     sem: c.semester
                 });
             }

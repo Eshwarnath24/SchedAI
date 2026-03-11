@@ -8,7 +8,6 @@ import {
   Coffee,
   Download,
   Eye,
-  Filter,
   MapPin,
   Menu,
   RefreshCw,
@@ -90,9 +89,6 @@ const ReportsPage = ({ user, events, announcementsList }) => {
             <p className="text-slate-500 text-sm mt-1 ml-9">Track your schedule changes, substitutions, and activity logs.</p>
           </div>
           <div className="flex gap-3 ml-auto md:ml-0">
-               <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm hover:bg-slate-50">
-                <Filter size={16} /> Filter
-              </button>
               <button 
                 onClick={() => setShowExportModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-rose-900 text-white rounded-lg text-sm hover:bg-rose-800 transition-colors shadow-sm"

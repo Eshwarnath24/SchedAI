@@ -111,6 +111,33 @@ export const AppContextProvider = (props) => {
                         });
                     });
                 });
+                // Merge locally-added events (current week) back in
+                try {
+                    const now = new Date();
+                    const d = now.getDay();
+                    const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - d + (d === 0 ? -6 : 1));
+                    const weekKey = `schedai_added_${teacherId}_${mon.getFullYear()}-${mon.getMonth() + 1}-${mon.getDate()}`;
+                    const localAdded = JSON.parse(localStorage.getItem(weekKey) || '[]');
+                    if (localAdded.length > 0) {
+                        localAdded.forEach(({ day, event }) => {
+                            if (!transformedEvents[day]) transformedEvents[day] = [];
+                            const alreadyPresent = transformedEvents[day].some(e => e.slotId === event.slotId);
+                            if (!alreadyPresent) transformedEvents[day].push(event);
+                        });
+                    }
+                    // Re-apply stored cancellations
+                    const cancelKey = `schedai_cancelled_${teacherId}_${mon.getFullYear()}-${mon.getMonth() + 1}-${mon.getDate()}`;
+                    const localCancelled = JSON.parse(localStorage.getItem(cancelKey) || '[]');
+                    if (localCancelled.length > 0) {
+                        localCancelled.forEach(({ day, slotId }) => {
+                            if (transformedEvents[day]) {
+                                transformedEvents[day] = transformedEvents[day].map(e =>
+                                    e.slotId === slotId ? { ...e, status: 'cancelled', isCancelled: true } : e
+                                );
+                            }
+                        });
+                    }
+                } catch (e) { /* ignore storage errors */ }
                 setEvents(transformedEvents);
                 setScheduleMetadata({
                     teacher: data.teacher,
