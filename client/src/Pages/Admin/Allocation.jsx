@@ -1,40 +1,48 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import {
     Plus,
-    Pencil,
     Trash2,
     Zap,
     CheckCircle2,
-    BookOpen,
     Loader2,
     AlertTriangle,
     Users,
     UserCheck,
-    Clock
+    Clock,
+    Lock,
+    X,
+    Edit2
 } from 'lucide-react';
 import { fetchPreferenceCourses, fetchPreferenceStatus, triggerScheduleGeneration } from '../../utils/api';
 
-const TYPE_BADGES = {
-    'Theory': { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' },
-    'Lab': { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' },
-    'CIR': { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100' },
+const getTypeStyles = (type) => {
+    switch (type) {
+        case 'PROFESSIONAL ELECTIVE': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+        case 'FREE ELECTIVE': return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+        case 'Lab': return 'text-blue-600 bg-blue-50 border-blue-100';
+        case 'CIR': return 'text-amber-600 bg-amber-50 border-amber-200';
+        case 'CORE COURSE':
+        case 'Theory':
+        default: return 'text-slate-500 bg-slate-50 border-slate-200';
+    }
 };
 
 const Allocation = () => {
     // --- State ---
-    const [courseData, setCourseData] = useState({}); // { semNum: [course, ...] }
+    const [courseData, setCourseData] = useState({});
     const [selectedSemester, setSelectedSemester] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generateResult, setGenerateResult] = useState(null);
-    const [showModal, setShowModal] = useState(false);
-    const [editingConfig, setEditingConfig] = useState({ semNum: null, index: null });
-    const [formData, setFormData] = useState({ code: '', title: '', ltp: '', credits: '4', category: 'Core' });
+    const [formReleased, setFormReleased] = useState(false);
+    const [recallModalOpen, setRecallModalOpen] = useState(false);
+    const [courseModal, setCourseModal] = useState({ isOpen: false, data: null, sem: null });
 
     // Faculty preference status
     const [prefStatus, setPrefStatus] = useState(null);
+    // eslint-disable-next-line no-unused-vars
     const [prefStatusLoading, setPrefStatusLoading] = useState(true);
 
     const semesterCycle = 'odd'; // Current cycle
@@ -68,6 +76,7 @@ const Allocation = () => {
             }
         };
         loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [semesterCycle]);
 
     // --- Load faculty preference status ---
@@ -114,54 +123,50 @@ const Allocation = () => {
         }
     };
 
-    // --- UI Logic ---
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        const { semNum, index } = editingConfig;
-        setCourseData(prev => {
-            const next = { ...prev };
-            const courses = [...(next[semNum] || [])];
-            if (index !== null) {
-                courses[index] = formData;
-            } else {
-                courses.push(formData);
-            }
-            next[semNum] = courses;
-            return next;
-        });
-        setShowModal(false);
-        setEditingConfig({ semNum: null, index: null });
+    const confirmRecall = () => {
+        setFormReleased(false);
+        setRecallModalOpen(false);
     };
 
-    const deleteCourse = (semNum, index) => {
-        if (window.confirm('Are you sure you want to remove this course?')) {
+    const handleSaveCourse = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const ltp = fd.get('l_val') + '-' + fd.get('t_val') + '-' + fd.get('p_val');
+        const sem = courseModal.data ? courseModal.data._sem : courseModal.sem;
+        const updated = {
+            ...(courseModal.data || {}),
+            code: fd.get('code'),
+            title: fd.get('title'),
+            ltp,
+            credits: fd.get('credits'),
+            type: fd.get('type') || 'CORE COURSE',
+        };
+        if (courseModal.data) {
             setCourseData(prev => {
                 const next = { ...prev };
-                const courses = [...(next[semNum] || [])];
-                courses.splice(index, 1);
-                next[semNum] = courses;
+                next[sem] = (next[sem] || []).map(c =>
+                    (c._id && c._id === updated._id) || c.code === updated.code ? updated : c
+                );
+                return next;
+            });
+        } else {
+            setCourseData(prev => {
+                const next = { ...prev };
+                next[sem] = [...(next[sem] || []), updated];
                 return next;
             });
         }
+        setCourseModal({ isOpen: false, data: null, sem: null });
     };
 
-    const openAddModal = (semNum) => {
-        setFormData({ code: '', title: '', ltp: '', credits: '4', category: 'Core' });
-        setEditingConfig({ semNum, index: null });
-        setShowModal(true);
-    };
-
-    const openEditModal = (semNum, index) => {
-        const course = courseData[semNum][index];
-        setFormData({
-            code: course.code || '',
-            title: course.title || course.name || '',
-            ltp: course.ltp || '',
-            credits: String(course.credits || '4'),
-            category: course.category || 'Core'
-        });
-        setEditingConfig({ semNum, index });
-        setShowModal(true);
+    const deleteCourse = (semNum, courseCode) => {
+        if (window.confirm('Are you sure you want to remove this course?')) {
+            setCourseData(prev => {
+                const next = { ...prev };
+                next[semNum] = (next[semNum] || []).filter(c => c.code !== courseCode);
+                return next;
+            });
+        }
     };
 
     // --- Loading State ---
@@ -178,14 +183,13 @@ const Allocation = () => {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-            {/* Header Section */}
+
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Academic Course Management</h1>
                     <p className="text-slate-500 font-medium">B.Tech Program - Session 2025-26</p>
                 </div>
-
-                {/* Semester Selector */}
                 {availableSemesters.length > 1 && (
                     <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                         <span className="pl-3 text-xs font-bold text-slate-400 uppercase tracking-widest">Semester:</span>
@@ -211,7 +215,7 @@ const Allocation = () => {
                 </div>
             )}
 
-            {/* Faculty Readiness + Generate Timetable Dashboard */}
+            {/* â”€â”€ Faculty Preference Status + Generate Timetable â”€â”€ */}
             <div className="bg-[#9b1c31] rounded-[32px] p-8 text-white shadow-2xl shadow-[#9b1c31]/20 relative overflow-hidden group">
                 <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-700"></div>
 
@@ -229,11 +233,9 @@ const Allocation = () => {
                                 <span className="block mt-1"> Current completion: <span className="font-bold text-white underline decoration-yellow-400 decoration-2 underline-offset-4">{submittedCount} of {totalFaculty}</span> faculty submitted.</span>
                             )}
                             {allSubmitted && (
-                                <span className="block mt-1 text-emerald-300 font-bold">✓ All faculty have submitted their preferences!</span>
+                                <span className="block mt-1 text-emerald-300 font-bold">âœ“ All faculty have submitted their preferences!</span>
                             )}
                         </p>
-
-                        {/* Progress bar */}
                         <div className="space-y-2">
                             <div className="h-3 bg-white/10 rounded-full overflow-hidden border border-white/5">
                                 <div
@@ -242,8 +244,6 @@ const Allocation = () => {
                                 ></div>
                             </div>
                         </div>
-
-                        {/* Faculty list quick view */}
                         {prefStatus?.faculty && !allSubmitted && (
                             <div className="flex flex-wrap gap-2 mt-2">
                                 {prefStatus.faculty.map(f => (
@@ -289,7 +289,6 @@ const Allocation = () => {
                     </div>
                 </div>
 
-                {/* Generation Result Info */}
                 {generateResult && (
                     <div className="relative z-10 mt-6 pt-6 border-t border-white/20">
                         <div className="flex gap-8 text-sm">
@@ -306,162 +305,180 @@ const Allocation = () => {
                 )}
             </div>
 
-            {/* Single Semester Course List */}
-            {selectedSemester && currentCourses.length > 0 && (
-                <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="px-8 py-8 border-b border-slate-50 flex items-center justify-between bg-[#F8FAFC]/50">
-                        <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-[#9b1c31] font-black text-xl shadow-sm border border-slate-100">
-                                S{selectedSemester}
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-slate-800 tracking-tight">Semester {selectedSemester}</h2>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentCourses.length} Courses</p>
-                            </div>
+            {/* â”€â”€ Course Matrix â”€â”€ */}
+            <div className="space-y-4">
+                {/* Section header with Release/Recall control */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-xl font-black text-gray-900 tracking-tight">Course Matrix</h3>
+                            {formReleased && (
+                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-orange-100 text-orange-800 px-2 py-1 rounded-md">
+                                    <Lock size={12} /> Locked
+                                </span>
+                            )}
                         </div>
-                        <button
-                            onClick={() => openAddModal(selectedSemester)}
-                            className="px-6 py-3 bg-[#9b1c31] text-white rounded-2xl text-xs font-black flex items-center gap-2 hover:bg-[#801629] transition-colors shadow-lg shadow-[#9b1c31]/20"
-                        >
-                            <Plus size={16} strokeWidth={3} /> ADD NEW COURSE
-                        </button>
+                        <p className="text-sm text-gray-500 mt-1">Configure courses for the active cycle. Lock when ready to release to faculty.</p>
                     </div>
+                    <button
+                        onClick={() => formReleased ? setRecallModalOpen(true) : setFormReleased(true)}
+                        className={"px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all " + (formReleased ? "bg-orange-100 text-orange-800 hover:bg-orange-200" : "bg-[#9b1c31] text-white hover:bg-[#801629] hover:shadow-lg")}
+                    >
+                        {formReleased ? 'Recall Form' : 'Release Form'}
+                    </button>
+                </div>
 
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left min-w-[800px]">
-                            <thead>
-                                <tr className="bg-slate-50/50">
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Course Code & Type</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Course Title</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">L-T-P</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Credits</th>
-                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {currentCourses.map((course, idx) => {
-                                    const isPF = course.credits === 'P/F';
-                                    const courseType = course.type || 'Theory';
-                                    const typeBadge = TYPE_BADGES[courseType] || TYPE_BADGES['Theory'];
-                                    return (
-                                        <tr key={`${course.code || course._id}-${idx}`} className="group hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-8 py-6">
-                                                <div className="flex flex-col gap-1.5 whitespace-nowrap">
-                                                    <span className="text-sm font-black text-[#9b1c31] tracking-tight">{course.code}</span>
-                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-md w-fit uppercase tracking-wider border ${typeBadge.bg} ${typeBadge.text} ${typeBadge.border}`}>
+                {/* Semester course table */}
+                {selectedSemester && (
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#9b1c31] flex items-center justify-center font-black">
+                                    S{selectedSemester}
+                                </div>
+                                <h4 className="font-bold text-gray-900">
+                                    Semester {selectedSemester}
+                                    <span className="text-gray-400 font-medium text-sm ml-2">({currentCourses.length} courses)</span>
+                                </h4>
+                            </div>
+                            <button
+                                disabled={formReleased}
+                                onClick={() => setCourseModal({ isOpen: true, data: null, sem: selectedSemester })}
+                                className={"flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow-sm " + (formReleased ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "text-[#9b1c31] bg-white border border-red-100 hover:bg-red-50 hover:border-red-200")}
+                            >
+                                <Plus size={14} strokeWidth={3} /> Add Course
+                            </button>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-white border-b border-gray-100 text-[10px] uppercase tracking-widest text-gray-400">
+                                        <th className="p-4 pl-6 font-bold w-1/4">Course Code</th>
+                                        <th className="p-4 font-bold">Title</th>
+                                        <th className="p-4 font-bold">L-T-P</th>
+                                        <th className="p-4 font-bold">Credits</th>
+                                        <th className="p-4 pr-6 font-bold text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {currentCourses.length > 0 ? currentCourses.map((course, idx) => {
+                                        const courseType = course.type || course.category || 'Theory';
+                                        const isPF = course.credits === 'P/F';
+                                        return (
+                                            <tr key={course._id || course.code || idx} className="hover:bg-gray-50/50 transition-colors group">
+                                                <td className="p-4 pl-6">
+                                                    <div className="font-bold text-[#9b1c31] mb-1 font-mono text-sm">{course.code}</div>
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider whitespace-nowrap ${getTypeStyles(courseType)}`}>
                                                         {courseType}
                                                     </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className="text-sm font-bold text-slate-700 block min-w-[200px]">{course.title || course.name}</span>
-                                            </td>
-                                            <td className="px-8 py-6 text-center">
-                                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 whitespace-nowrap inline-block">{course.ltp || '-'}</span>
-                                            </td>
-                                            <td className="px-8 py-6 text-center whitespace-nowrap">
-                                                <span className={`text-xs font-black px-4 py-1.5 rounded-xl border ${isPF ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white text-slate-600 border-slate-200 shadow-sm'}`}>
-                                                    {isPF ? 'PASS / FAIL' : `${course.credits} CREDITS`}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                    <button onClick={() => openEditModal(selectedSemester, idx)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all">
-                                                        <Pencil size={18} />
+                                                </td>
+                                                <td className="p-4 text-sm font-bold text-gray-900">{course.title || course.name}</td>
+                                                <td className="p-4 text-xs text-gray-500 font-medium">{course.ltp || '-'}</td>
+                                                <td className="p-4">
+                                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-black">
+                                                        {isPF ? 'P/F' : `${course.credits} Cr`}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 pr-6 text-right">
+                                                    <button
+                                                        disabled={formReleased}
+                                                        onClick={() => setCourseModal({ isOpen: true, data: { ...course, _sem: selectedSemester }, sem: null })}
+                                                        className={"p-1.5 transition-colors mr-1 " + (formReleased ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:text-blue-600")}
+                                                    >
+                                                        <Edit2 size={16} />
                                                     </button>
-                                                    <button onClick={() => deleteCourse(selectedSemester, idx)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                                                        <Trash2 size={18} />
+                                                    <button
+                                                        disabled={formReleased}
+                                                        onClick={() => deleteCourse(selectedSemester, course.code)}
+                                                        className={"p-1.5 transition-colors " + (formReleased ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:text-red-600")}
+                                                    >
+                                                        <Trash2 size={16} />
                                                     </button>
-                                                </div>
-                                            </td>
+                                                </td>
+                                            </tr>
+                                        );
+                                    }) : (
+                                        <tr>
+                                            <td colSpan="5" className="p-10 text-center text-gray-400 text-sm">No courses configured for this semester.</td>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* â”€â”€ Recall Confirmation Modal â”€â”€ */}
+            {recallModalOpen && (
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
+                        <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-6">
+                            <AlertTriangle size={32} />
+                        </div>
+                        <h3 className="text-2xl font-black text-gray-900 mb-2">Recall Form?</h3>
+                        <p className="text-gray-500 mb-8 leading-relaxed">
+                            Recalling the form will <strong className="text-red-600">unlock course editing</strong> and prevent faculty from submitting new preferences until the form is re-released.
+                        </p>
+                        <div className="flex gap-3">
+                            <button onClick={() => setRecallModalOpen(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Cancel</button>
+                            <button onClick={confirmRecall} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-colors">Yes, Recall</button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Empty state when no courses for selected semester */}
-            {selectedSemester && currentCourses.length === 0 && (
-                <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 p-20 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
-                            <BookOpen size={30} />
+            {/* â”€â”€ Add / Edit Course Modal â”€â”€ */}
+            {courseModal.isOpen && (
+                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 animate-in slide-in-from-bottom-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-black text-gray-900">{courseModal.data ? 'Edit Course' : 'Add New Course'}</h3>
+                            <button onClick={() => setCourseModal({ isOpen: false, data: null, sem: null })} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors">
+                                <X size={20} />
+                            </button>
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-slate-500 font-bold">No courses for Semester {selectedSemester}.</p>
-                            <p className="text-xs text-slate-400 font-medium">This semester has no courses in the database.</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-                    <div className="relative bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-8 border-b border-slate-50">
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                                {editingConfig.index !== null ? 'Edit Course' : 'Add New Course'}
-                            </h2>
-                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Semester {editingConfig.semNum}</p>
-                        </div>
-
-                        <form onSubmit={handleFormSubmit} className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Course Code</label>
-                                    <input type="text" required placeholder="e.g. 19CSE301"
-                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#9b1c31]/20 focus:bg-white transition-all text-sm font-bold"
-                                        value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} />
+                        <form onSubmit={handleSaveCourse} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Course Code</label>
+                                <input required name="code" defaultValue={courseModal.data?.code} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-mono text-gray-900 focus:ring-2 focus:ring-[#9b1c31] focus:border-transparent outline-none transition-all" placeholder="e.g. 23CSE301" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Course Title</label>
+                                <input required name="title" defaultValue={courseModal.data?.title || courseModal.data?.name} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#9b1c31] focus:border-transparent outline-none transition-all" placeholder="e.g. Operating Systems" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Course Type</label>
+                                <select name="type" defaultValue={courseModal.data?.type || courseModal.data?.category || 'CORE COURSE'} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#9b1c31] outline-none">
+                                    <option value="CORE COURSE">Core Course</option>
+                                    <option value="PROFESSIONAL ELECTIVE">Professional Elective</option>
+                                    <option value="FREE ELECTIVE">Free Elective</option>
+                                    <option value="Lab">Lab</option>
+                                    <option value="CIR">CIR</option>
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                                        L-T-P <span className="lowercase font-normal text-gray-400 tracking-normal">(Lec-Tut-Prac)</span>
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input required name="l_val" type="number" min="0" max="9" defaultValue={courseModal.data?.ltp?.split('-')[0] || ''} className="flex-1 px-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-mono text-gray-900 focus:ring-2 focus:ring-[#9b1c31] focus:border-transparent outline-none" placeholder="L" />
+                                        <span className="text-gray-400 font-bold">-</span>
+                                        <input required name="t_val" type="number" min="0" max="9" defaultValue={courseModal.data?.ltp?.split('-')[1] || ''} className="flex-1 px-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-mono text-gray-900 focus:ring-2 focus:ring-[#9b1c31] focus:border-transparent outline-none" placeholder="T" />
+                                        <span className="text-gray-400 font-bold">-</span>
+                                        <input required name="p_val" type="number" min="0" max="9" defaultValue={courseModal.data?.ltp?.split('-')[2] || ''} className="flex-1 px-2 py-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-mono text-gray-900 focus:ring-2 focus:ring-[#9b1c31] focus:border-transparent outline-none" placeholder="P" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">L-T-P</label>
-                                    <input type="text" required placeholder="3-0-2"
-                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#9b1c31]/20 focus:bg-white transition-all text-sm font-bold"
-                                        value={formData.ltp} onChange={e => setFormData({ ...formData, ltp: e.target.value })} />
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Credits</label>
+                                    <input required name="credits" defaultValue={courseModal.data?.credits} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#9b1c31] focus:border-transparent outline-none" placeholder="e.g. 4" />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Course Title</label>
-                                <input type="text" required placeholder="Enter full course name"
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#9b1c31]/20 focus:bg-white transition-all text-sm font-bold"
-                                    value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Credits</label>
-                                    <select className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#9b1c31]/20 focus:bg-white transition-all text-sm font-bold appearance-none"
-                                        value={formData.credits} onChange={e => setFormData({ ...formData, credits: e.target.value })}>
-                                        <option value="1">1 Credit</option>
-                                        <option value="2">2 Credits</option>
-                                        <option value="3">3 Credits</option>
-                                        <option value="4">4 Credits</option>
-                                        <option value="P/F">Pass / Fail</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
-                                    <select className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#9b1c31]/20 focus:bg-white transition-all text-sm font-bold appearance-none"
-                                        value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                                        <option value="Core">Core Subject</option>
-                                        <option value="PE">Professional Elective</option>
-                                        <option value="FE">Free Elective</option>
-                                        <option value="Audit">Audit / Others</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 pt-4">
-                                <button type="button" onClick={() => setShowModal(false)}
-                                    className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-colors">
-                                    CANCEL
-                                </button>
-                                <button type="submit"
-                                    className="flex-2 px-12 py-4 bg-[#9b1c31] text-white rounded-2xl font-black text-sm shadow-xl shadow-[#9b1c31]/20 hover:bg-[#801629] transition-colors">
-                                    SAVE COURSE
+                            <div className="pt-4">
+                                <button type="submit" className="w-full py-4 bg-[#9b1c31] text-white rounded-xl font-bold shadow-lg shadow-red-900/20 hover:bg-[#801629] hover:-translate-y-0.5 transition-all">
+                                    {courseModal.data ? 'Save Changes' : 'Add Course'}
                                 </button>
                             </div>
                         </form>
@@ -474,11 +491,7 @@ const Allocation = () => {
                     from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
-                .animate-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-                .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+                .animate-in { animation: fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
             `}</style>
         </div>
     );
