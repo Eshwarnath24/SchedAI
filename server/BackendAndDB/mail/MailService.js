@@ -61,18 +61,19 @@ const getTransporter = () => {
     if (_transporter) return _transporter;
 
     _transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.MAIL_PORT || '587', 10),
-    secure: false,
-    requireTLS: true,
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false
-    }
-});
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        family: 4, // FORCE IPv4
+        auth: {
+            user: process.env.MAIL_USER,
+            pass: process.env.MAIL_PASS,
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
 
     return _transporter;
 };
