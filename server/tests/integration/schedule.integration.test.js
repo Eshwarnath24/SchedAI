@@ -27,7 +27,7 @@ describe('Schedule Routes Integration', () => {
 
         teacher = await User.create({
             name: 'Dr. Smith', email: 'smith@univ.edu',
-            password: hashedPw, role: 'Faculty', department: 'CSE', rank: 'Professor'
+            password: hashedPw, role: 'Faculty', department: 'CSE', rank: 'Professor', phoneNumber: '9876543210'
         });
 
         section = await Section.create({
@@ -43,11 +43,11 @@ describe('Schedule Routes Integration', () => {
             name: 'N-101', building: 'North', capacity: 60, type: 'Lecture'
         });
 
-        await TimeSlot.create({
+        const timeSlot1 = await TimeSlot.create({
             slotIndex: 1, day: 'Monday', startTime: '09:00', endTime: '10:00'
         });
 
-        await TimeSlot.create({
+        const timeSlot2 = await TimeSlot.create({
             slotIndex: 2, day: 'Monday', startTime: '10:00', endTime: '11:00'
         });
     });
@@ -87,7 +87,7 @@ describe('Schedule Routes Integration', () => {
         test('200 — returns filtered teacher schedule', async () => {
             const teacher2 = await User.create({
                 name: 'Prof. Johnson', email: 'johnson@univ.edu',
-                password: 'hashed', role: 'Faculty', department: 'CSE', rank: 'Professor'
+                password: 'hashed', role: 'Faculty', department: 'CSE', rank: 'Professor', phoneNumber: '9876543211'
             });
 
             await Schedule.create({

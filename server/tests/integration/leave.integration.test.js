@@ -3,10 +3,13 @@
  * Tests /api/leaves/* against real Express + in-memory MongoDB
  */
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../testApp');
 const db = require('../setup');
 const User = require('../../BackendAndDB/DB_models/User');
 const bcrypt = require('bcryptjs');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'schedai_jwt_secret_key_2026_amrita';
 
 beforeAll(async () => await db.connect());
 afterEach(async () => await db.clearDatabase());
@@ -14,6 +17,7 @@ afterAll(async () => await db.disconnect());
 
 describe('Leave Routes Integration', () => {
     let faculty;
+    let token;
 
     beforeEach(async () => {
         const salt = await bcrypt.genSalt(10);
@@ -24,14 +28,22 @@ describe('Leave Routes Integration', () => {
             password: hashedPw,
             role: 'Faculty',
             department: 'CSE',
-            rank: 'Professor'
+            rank: 'Professor',
+            phoneNumber: '9876543210'
         });
+        // Generate JWT token for authentication
+        token = jwt.sign(
+            { id: faculty._id, role: 'Faculty' },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
     });
 
     describe('POST /api/leaves/apply-full', () => {
         test('201 — creates full day leave successfully', async () => {
             const res = await request(app)
                 .post('/api/leaves/apply-full')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     fromDate: '2027-08-10',
@@ -48,6 +60,7 @@ describe('Leave Routes Integration', () => {
         test('400 — rejects invalid date format', async () => {
             const res = await request(app)
                 .post('/api/leaves/apply-full')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     fromDate: '10-08-2027',
@@ -61,6 +74,7 @@ describe('Leave Routes Integration', () => {
         test('400 — rejects fromDate after toDate', async () => {
             const res = await request(app)
                 .post('/api/leaves/apply-full')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     fromDate: '2027-08-15',
@@ -75,6 +89,7 @@ describe('Leave Routes Integration', () => {
             // First request
             await request(app)
                 .post('/api/leaves/apply-full')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     fromDate: '2027-09-10',
@@ -85,6 +100,7 @@ describe('Leave Routes Integration', () => {
             // Overlapping request
             const res = await request(app)
                 .post('/api/leaves/apply-full')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     fromDate: '2027-09-12',
@@ -101,6 +117,7 @@ describe('Leave Routes Integration', () => {
         test('201 — creates slot unavailability successfully', async () => {
             const res = await request(app)
                 .post('/api/leaves/apply-slot')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     date: '2027-08-10',
@@ -117,6 +134,7 @@ describe('Leave Routes Integration', () => {
         test('400 — rejects invalid time format', async () => {
             const res = await request(app)
                 .post('/api/leaves/apply-slot')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     date: '2027-08-10',
@@ -134,6 +152,7 @@ describe('Leave Routes Integration', () => {
             // Create one full day leave
             await request(app)
                 .post('/api/leaves/apply-full')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     fromDate: '2027-10-01',
@@ -144,6 +163,7 @@ describe('Leave Routes Integration', () => {
             // Create one slot leave
             await request(app)
                 .post('/api/leaves/apply-slot')
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     facultyId: faculty._id.toString(),
                     date: '2027-11-01',
@@ -153,7 +173,8 @@ describe('Leave Routes Integration', () => {
                 });
 
             const res = await request(app)
-                .get(`/api/leaves/history/${faculty._id.toString()}`);
+                .get(`/api/leaves/history/${faculty._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.status).toBe(200);
             expect(res.body.leaveHistory).toBeDefined();
@@ -164,7 +185,8 @@ describe('Leave Routes Integration', () => {
 
         test('200 — returns empty arrays for faculty with no history', async () => {
             const res = await request(app)
-                .get(`/api/leaves/history/${faculty._id.toString()}`);
+                .get(`/api/leaves/history/${faculty._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.status).toBe(200);
             expect(res.body.leaveHistory).toHaveLength(0);
