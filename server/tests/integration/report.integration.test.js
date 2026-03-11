@@ -27,7 +27,7 @@ describe('Report Routes Integration', () => {
 
         teacher = await User.create({
             name: 'Dr. Smith', email: 'smith@univ.edu',
-            password: hashedPw, role: 'Faculty', department: 'CSE', rank: 'Professor'
+            password: hashedPw, role: 'Faculty', department: 'CSE', rank: 'Professor', phoneNumber: '9876543210'
         });
 
         course = await Course.create({
