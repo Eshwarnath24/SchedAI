@@ -9,10 +9,18 @@ import { DAYS, SLOTS } from "../../utils/constants";
 import { AppContext } from "../../context/AppContext";
 import {
   addClassToTimetable,
+  canScheduleClass,
   markClassAsCancelled,
   markClassAsScheduled,
   shiftClassInTimetable,
 } from "../../utils/timetableData";
+
+const getWeekKey = (userId, prefix = 'added') => {
+  const now = new Date();
+  const d = now.getDay();
+  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - d + (d === 0 ? -6 : 1));
+  return `schedai_${prefix}_${userId}_${mon.getFullYear()}-${mon.getMonth() + 1}-${mon.getDate()}`;
+};
 import { createScheduleOverride, deleteScheduleOverride } from "../../utils/api";
 
 export default function TimetablePage() {
@@ -59,14 +67,22 @@ export default function TimetablePage() {
   };
 
   const handleSaveEvent = (newEvent) => {
-    setEvents((prev) => {
-      const { events: next, error } = addClassToTimetable(prev, addModal.day, newEvent);
-      if (error) {
-        alert(error);
-        return prev;
-      }
-      return next;
-    });
+    // Validate before touching state so we only persist valid events
+    const check = canScheduleClass(events, addModal.day, newEvent.slotId, newEvent.room);
+    if (!check.ok) {
+      alert(!check.slotFree ? 'Slot already has a class for this teacher.' : 'Room is not available for this slot.');
+      return;
+    }
+    setEvents((prev) => addClassToTimetable(prev, addModal.day, newEvent).events);
+    // Persist added event to localStorage so it survives page refresh for this week
+    if (loggedInUser) {
+      try {
+        const key = getWeekKey(loggedInUser._id);
+        const stored = JSON.parse(localStorage.getItem(key) || '[]');
+        stored.push({ day: addModal.day, event: { ...newEvent, status: newEvent.status || 'scheduled' } });
+        localStorage.setItem(key, JSON.stringify(stored));
+      } catch (e) { /* storage full or unavailable */ }
+    }
     setAddModal({ isOpen: false, day: null, slotId: null });
   };
 
@@ -98,6 +114,15 @@ export default function TimetablePage() {
       } catch (err) {
         console.warn('⚠️ Failed to persist cancel override:', err.message);
       }
+      // Save cancellation to localStorage so it survives refresh
+      try {
+        const cancelKey = getWeekKey(loggedInUser._id, 'cancelled');
+        const stored = JSON.parse(localStorage.getItem(cancelKey) || '[]');
+        if (!stored.some(c => c.day === day && c.slotId === event.slotId)) {
+          stored.push({ day, slotId: event.slotId });
+          localStorage.setItem(cancelKey, JSON.stringify(stored));
+        }
+      } catch (e) { /* storage unavailable */ }
     }
   };
 
@@ -114,6 +139,14 @@ export default function TimetablePage() {
       } catch (err) {
         console.warn('⚠️ Failed to remove override:', err.message);
       }
+    }
+    // Remove local cancellation record so it doesn't re-apply on next refresh
+    if (event && loggedInUser) {
+      try {
+        const cancelKey = getWeekKey(loggedInUser._id, 'cancelled');
+        const stored = JSON.parse(localStorage.getItem(cancelKey) || '[]');
+        localStorage.setItem(cancelKey, JSON.stringify(stored.filter(c => !(c.day === day && c.slotId === event.slotId))));
+      } catch (e) { /* storage unavailable */ }
     }
   };
 

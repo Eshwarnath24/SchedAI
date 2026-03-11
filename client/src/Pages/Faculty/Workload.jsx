@@ -293,10 +293,11 @@ export default function WorkloadPage() {
       fullWeekData = buildChartData(facultyReport);
     }
 
-    // Show only days up to and including today
-    return fullWeekData.filter(day => {
+    // Show all days — past/today have real data, future days are zeroed out
+    return fullWeekData.map(day => {
       const idx = DAY_ORDER.indexOf(day.name);
-      return idx !== -1 && idx <= todayIndex;
+      if (idx !== -1 && idx <= todayIndex) return day;
+      return { name: day.name, theory: 0, lab: 0, admin: 0 };
     });
   }, [workloadData, facultyReport, todayIndex, DAY_ORDER]);
 
@@ -432,7 +433,7 @@ export default function WorkloadPage() {
                 <div className="flex items-center gap-2 mt-0.5">
                   <UserCheck size={16} className="text-rose-900" />
                   <span className="font-bold text-gray-800 text-sm truncate">
-                    {teacherName} (ID: {teacherId})
+                    {teacherName}
                   </span>
                 </div>
               </div>
@@ -450,18 +451,8 @@ export default function WorkloadPage() {
                   </label>
 
                   <div className="flex items-center gap-2 mt-0.5">
-                    <Calendar
-                      size={14}
-                      className="text-gray-400 flex-shrink-0"
-                    />
-                    <select
-                      value={academicYear}
-                      onChange={(e) => setAcademicYear(e.target.value)}
-                      className="w-full bg-transparent font-semibold text-sm text-gray-700 focus:outline-none cursor-pointer"
-                    >
-                      <option>2025-2026</option>
-                      <option>2024-2025</option>
-                    </select>
+                    <Calendar size={14} className="text-gray-400 flex-shrink-0" />
+                    <span className="font-semibold text-sm text-gray-700">{academicYear}</span>
                   </div>
                 </div>
 
@@ -471,18 +462,8 @@ export default function WorkloadPage() {
                   </label>
 
                   <div className="flex items-center gap-2 mt-0.5">
-                    <Clock
-                      size={14}
-                      className="text-gray-400 flex-shrink-0"
-                    />
-                    <select
-                      value={semester}
-                      onChange={(e) => setSemester(e.target.value)}
-                      className="w-full bg-transparent font-semibold text-sm text-gray-700 focus:outline-none cursor-pointer"
-                    >
-                      <option>Odd (Current)</option>
-                      <option>Even</option>
-                    </select>
+                    <Clock size={14} className="text-gray-400 flex-shrink-0" />
+                    <span className="font-semibold text-sm text-gray-700">{semester}</span>
                   </div>
                 </div>
               </div>
@@ -527,7 +508,7 @@ export default function WorkloadPage() {
                   Your Schedule Distribution
                 </h3>
                 <p className="text-sm text-gray-400 font-medium">
-                  Mon – {currentDayLabel} • {chartData.length} day{chartData.length !== 1 ? 's' : ''} this week
+                  Mon – Fri • Updated through {currentDayLabel}
                 </p>
               </div>
 

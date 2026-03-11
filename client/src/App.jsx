@@ -11,6 +11,7 @@ import AdminDashboard from "./Pages/Admin/Dashboard";
 import AdminReport from "./Pages/Admin/Report";
 import AdminTimeTable from "./Pages/Admin/TimeTable";
 import AdminAnnouncements from "./Pages/Admin/Announcements";
+import AdminWorkload from "./Pages/Admin/Workload";
 import AuthPage from "./Pages/AuthPage";
 import { AppContext } from "./context/AppContext";
 
@@ -56,11 +57,12 @@ const App = () => {
       <Route path="/student/section-timetable" element={isAuthenticated && userRole === 'student' ? <SectionTimeTable /> : <Navigate to="/auth" />} />
       <Route path="/student/teachers-timetable" element={isAuthenticated && userRole === 'student' ? <TeachersTimeTable /> : <Navigate to="/auth" />} />
 
-      {/* Admin Routes */}
+      {/* Admin Routes */}  
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/reports" element={<AdminReport />} />
       <Route path="/admin/timetable" element={<AdminTimeTable />} />
       <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+      <Route path="/admin/workload" element={<AdminWorkload />} />
 
       {/* Faculty Routes */}
       <Route path="/time-table" element={isAuthenticated ? <TimeTable /> : <Navigate to="/auth" />} />
