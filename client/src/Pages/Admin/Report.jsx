@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { 
-  BookOpen, 
-  FlaskConical, 
-  GraduationCap, 
-  CalendarDays, 
-  Award, 
+import {
+  BookOpen,
+  FlaskConical,
+  GraduationCap,
+  CalendarDays,
+  Award,
   TrendingUp,
   FileText,
   Clock,
@@ -19,13 +19,15 @@ import {
   Download,
   Menu,
 } from 'lucide-react';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell 
+  PieChart, Pie, Cell
 } from 'recharts';
 import AdminSidebar from '../../components/AdminSidebar';
+import amritaLogo from '../../assets/amrita_logo.png';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import Logo from '../../components/Logo';
 
 // --- MOCK DATA ---
 const departmentMetrics = {
@@ -49,7 +51,7 @@ const facultyList = [
       totalClassesConducted: 142,
       researchPapers: 3,
       overallPassPercentage: 94,
-      attendanceRate: 96 
+      attendanceRate: 96
     },
     classes: [
       { id: 1, name: "Design and Analysis of Algorithms", type: "Theory", semester: "Fall", students: 65, avgPerformance: 78, passRate: 92, feedback: 4.5 },
@@ -78,7 +80,7 @@ const facultyList = [
       totalClassesConducted: 120,
       researchPapers: 5,
       overallPassPercentage: 97,
-      attendanceRate: 98 
+      attendanceRate: 98
     },
     classes: [
       { id: 1, name: "Artificial Intelligence", type: "Theory", semester: "Fall", students: 55, avgPerformance: 85, passRate: 98, feedback: 4.9 },
@@ -241,10 +243,10 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 md:p-6 print:p-0 print:bg-white">
-      
+
       {/* Modal Container */}
       <div className="bg-white w-full max-w-5xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden print:shadow-none print:h-auto print:max-h-none print:w-full">
-        
+
         {/* Header (Non-printable actions) */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-slate-50 print:hidden">
           <h2 className="text-xl font-bold text-gray-800 flex items-center">
@@ -252,7 +254,7 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
             Report Preview: {faculty.facultyName}
           </h2>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleDownloadPDF}
               disabled={generating}
               className="px-4 py-2 bg-[#8A1538] text-white text-sm font-semibold rounded-lg hover:bg-[#6e102c] transition-colors flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
@@ -260,8 +262,8 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
               {generating ? (
                 <>
                   <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
                   Generating...
                 </>
@@ -272,7 +274,7 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
                 </>
               )}
             </button>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
             >
@@ -284,139 +286,140 @@ const ReportPreviewModal = ({ faculty, onClose }) => {
         {/* Scrollable Printable Content area */}
         <div className="overflow-y-auto p-8 print:p-0 print:overflow-visible custom-scrollbar print:text-black">
           <div ref={contentRef}>
-          
-          {/* Print Header (Amrita Branded) */}
-          <div className="border-b-4 border-[#8A1538] pb-6 mb-8 text-center print:pt-4">
-            <h1 className="text-3xl font-black text-[#8A1538] uppercase tracking-wide">Amrita Vishwa Vidyapeetham</h1>
-            <h2 className="text-xl font-semibold text-gray-700 mt-2">Faculty Performance & Appraisal Report</h2>
-            <p className="text-gray-500 mt-1">{departmentMetrics.period}</p>
-          </div>
 
-          {/* Section 1: Faculty Profile */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8 print:bg-white print:border-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Faculty Name</p>
-                <p className="font-bold text-gray-900 text-lg">{faculty.facultyName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Designation</p>
-                <p className="font-bold text-gray-900 text-lg">{faculty.designation}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Department</p>
-                <p className="font-bold text-gray-900 text-lg">{departmentMetrics.department}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Overall Feedback</p>
-                <p className="font-bold text-[#8A1538] text-lg">{faculty.overallMetrics.avgStudentFeedback} / 5.0</p>
-              </div>
+            {/* Print Header (Amrita Branded) */}
+            <div className="border-b-4 border-[#8A1538] pb-6 mb-8 text-center print:pt-4">
+              <img src={amritaLogo} alt="Amrita Logo" className="h-16 w-auto mx-auto mb-4 object-contain" />
+              <h1 className="text-3xl font-black uppercase tracking-wide">SchedAI - Amrita University</h1>
+              <h2 className="text-xl font-semibold text-gray-700 mt-2">Faculty Performance & Appraisal Report</h2>
+              <p className="text-gray-500 mt-1">{departmentMetrics.period}</p>
             </div>
-          </div>
 
-          {/* Section 2: Core Metrics */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <MetricCard icon={BookOpen} title="Classes Taken" value={faculty.overallMetrics.totalClassesConducted} customBg="bg-blue-50" customText="text-blue-700" />
-            <MetricCard icon={TrendingUp} title="Overall Pass %" value={`${faculty.overallMetrics.overallPassPercentage}%`} customBg="bg-green-50" customText="text-green-700" />
-            <MetricCard icon={UserCheck} title="Attendance Rate" value={`${faculty.overallMetrics.attendanceRate}%`} customBg="bg-rose-50" customText="text-[#8A1538]" />
-            <MetricCard icon={FileText} title="Research Papers" value={faculty.overallMetrics.researchPapers} customBg="bg-amber-50" customText="text-amber-700" />
-          </div>
-
-          {/* Section 3: Graphical Analysis */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            
-            {/* Performance Bar Chart */}
-            <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 print:border-2 print:break-inside-avoid">
-              <h3 className="text-lg font-bold text-gray-800 mb-6">Course-wise Performance Breakdown</h3>
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={performanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                    <XAxis dataKey="name" tick={{fontSize: 12, fill: '#6B7280'}} />
-                    <YAxis tick={{fontSize: 12, fill: '#6B7280'}} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      labelStyle={{ fontWeight: 'bold', color: '#374151' }}
-                    />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }}/>
-                    <Bar dataKey="PassRate" name="Pass Rate (%)" fill="#10B981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="AvgScore" name="Avg Score (%)" fill="#8A1538" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+            {/* Section 1: Faculty Profile */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8 print:bg-white print:border-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Faculty Name</p>
+                  <p className="font-bold text-gray-900 text-lg">{faculty.facultyName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Designation</p>
+                  <p className="font-bold text-gray-900 text-lg">{faculty.designation}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Department</p>
+                  <p className="font-bold text-gray-900 text-lg">{departmentMetrics.department}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Overall Feedback</p>
+                  <p className="font-bold text-[#8A1538] text-lg">{faculty.overallMetrics.avgStudentFeedback} / 5.0</p>
+                </div>
               </div>
             </div>
 
-            {/* Leaves Pie Chart */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 print:border-2 print:break-inside-avoid">
-              <h3 className="text-lg font-bold text-gray-800 mb-6">Leave Utilization</h3>
-              <div className="h-60 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={faculty.leaves}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="taken"
-                    >
-                      {faculty.leaves.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.hex} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+            {/* Section 2: Core Metrics */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <MetricCard icon={BookOpen} title="Classes Taken" value={faculty.overallMetrics.totalClassesConducted} customBg="bg-blue-50" customText="text-blue-700" />
+              <MetricCard icon={TrendingUp} title="Overall Pass %" value={`${faculty.overallMetrics.overallPassPercentage}%`} customBg="bg-green-50" customText="text-green-700" />
+              <MetricCard icon={UserCheck} title="Attendance Rate" value={`${faculty.overallMetrics.attendanceRate}%`} customBg="bg-rose-50" customText="text-[#8A1538]" />
+              <MetricCard icon={FileText} title="Research Papers" value={faculty.overallMetrics.researchPapers} customBg="bg-amber-50" customText="text-amber-700" />
+            </div>
+
+            {/* Section 3: Graphical Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+
+              {/* Performance Bar Chart */}
+              <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 print:border-2 print:break-inside-avoid">
+                <h3 className="text-lg font-bold text-gray-800 mb-6">Course-wise Performance Breakdown</h3>
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={performanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} />
+                      <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        labelStyle={{ fontWeight: 'bold', color: '#374151' }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar dataKey="PassRate" name="Pass Rate (%)" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="AvgScore" name="Avg Score (%)" fill="#8A1538" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-              <div className="mt-4 space-y-2">
-                {faculty.leaves.map((l, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center">
-                      <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: l.hex }}></span>
-                      <span className="text-gray-600">{l.type.split(' ')[0]}</span>
+
+              {/* Leaves Pie Chart */}
+              <div className="bg-white border border-gray-200 rounded-xl p-6 print:border-2 print:break-inside-avoid">
+                <h3 className="text-lg font-bold text-gray-800 mb-6">Leave Utilization</h3>
+                <div className="h-60 w-full flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={faculty.leaves}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="taken"
+                      >
+                        {faculty.leaves.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.hex} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {faculty.leaves.map((l, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-sm">
+                      <div className="flex items-center">
+                        <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: l.hex }}></span>
+                        <span className="text-gray-600">{l.type.split(' ')[0]}</span>
+                      </div>
+                      <span className="font-bold">{l.taken} <span className="text-gray-400 font-normal">/ {l.total}</span></span>
                     </div>
-                    <span className="font-bold">{l.taken} <span className="text-gray-400 font-normal">/ {l.total}</span></span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Section 4: Tabular Data (Events) */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 print:border-2 print:break-inside-avoid">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Professional Development (Events & Workshops)</h3>
-            {faculty.events.length > 0 ? (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Event Name</th>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {faculty.events.map((event) => (
-                    <tr key={event.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{event.title}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{event.type}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{event.role}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{event.date}</td>
+            {/* Section 4: Tabular Data (Events) */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 print:border-2 print:break-inside-avoid">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Professional Development (Events & Workshops)</h3>
+              {faculty.events.length > 0 ? (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Event Name</th>
+                      <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                      <th className="px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-gray-500 italic">No events or workshops recorded for this period.</p>
-            )}
-          </div>
-          
-          {/* PDF Footer — always visible in PDF capture */}
-          <div className="mt-12 pt-8 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-500">System Generated Report • Amrita Academic Management System</p>
-            <p className="text-sm text-gray-500 mt-1">Date Generated: {new Date().toLocaleDateString()}</p>
-          </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {faculty.events.map((event) => (
+                      <tr key={event.id}>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">{event.title}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{event.type}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{event.role}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{event.date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-gray-500 italic">No events or workshops recorded for this period.</p>
+              )}
+            </div>
+
+            {/* PDF Footer — always visible in PDF capture */}
+            <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+              <p className="text-sm text-gray-500">System Generated Report • SchedAI - Amrita University</p>
+              <p className="text-sm text-gray-500 mt-1">Date Generated: {new Date().toLocaleDateString()}</p>
+            </div>
 
           </div>{/* end contentRef wrapper */}
         </div>
@@ -434,13 +437,13 @@ const FacultyCard = ({ faculty }) => {
     <>
       <div className={`bg-white rounded-xl border ${isExpanded ? 'border-[#8A1538] shadow-md' : 'border-gray-200 shadow-sm'} overflow-hidden transition-all duration-300 print:hidden`}>
         {/* Faculty Summary Header (Clickable) */}
-        <div 
+        <div
           className="p-5 cursor-pointer hover:bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-rose-100 text-[#8A1538] flex items-center justify-center font-bold text-lg">
-              {faculty.facultyName.split(' ').map(n => n[0]).join('').substring(0,2)}
+              {faculty.facultyName.split(' ').map(n => n[0]).join('').substring(0, 2)}
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900">{faculty.facultyName}</h3>
@@ -465,7 +468,7 @@ const FacultyCard = ({ faculty }) => {
               <p className="text-xs text-gray-500">Attendance</p>
               <p className="font-semibold text-[#8A1538]">{faculty.overallMetrics.attendanceRate}%</p>
             </div>
-            
+
             {/* Action Buttons (Expand) */}
             <div className="flex items-center gap-1 border-l border-gray-200 pl-2 md:pl-4">
               <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
@@ -478,10 +481,10 @@ const FacultyCard = ({ faculty }) => {
         {/* Expanded Detailed View */}
         {isExpanded && (
           <div className="border-t border-gray-100 bg-slate-50 p-6">
-            
+
             {/* ACTION BAR IN EXPANDED VIEW */}
             <div className="flex justify-end mb-6">
-              <button 
+              <button
                 onClick={() => setShowModal(true)}
                 className="bg-white border-2 border-[#8A1538] text-[#8A1538] hover:bg-[#8A1538] hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center shadow-sm"
               >
@@ -491,10 +494,10 @@ const FacultyCard = ({ faculty }) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+
               {/* Left Column: Academic Performance */}
               <div className="lg:col-span-2 space-y-6">
-                
+
                 {/* Theory Classes */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div className="p-4 border-b border-gray-100 bg-gray-50/50">
@@ -576,7 +579,7 @@ const FacultyCard = ({ faculty }) => {
 
               {/* Right Column: Leaves & Events */}
               <div className="space-y-6">
-                
+
                 {/* Leaves */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div className="p-4 border-b border-gray-100 bg-gray-50/50">
@@ -595,8 +598,8 @@ const FacultyCard = ({ faculty }) => {
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          <div 
-                            className={`${leave.color} h-1.5 rounded-full`} 
+                          <div
+                            className={`${leave.color} h-1.5 rounded-full`}
                             style={{ width: `${(leave.taken / leave.total) * 100}%` }}
                           ></div>
                         </div>
@@ -646,7 +649,7 @@ export default function FacultyReviewReport() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const filteredFaculty = facultyList.filter(f => 
+  const filteredFaculty = facultyList.filter(f =>
     f.facultyName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -667,98 +670,95 @@ export default function FacultyReviewReport() {
       </aside>
 
       <main className="flex-1 overflow-y-auto w-full relative print:overflow-visible print:h-auto">
-        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 print:hidden">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
-            <span className="font-bold text-slate-800">Admin Reports</span>
-          </div>
+        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 bg-white/80 backdrop-blur-md">
+          <Logo type="scheduler" className="w-8 h-8" showText={false} textClassName="text-xl" />
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
             <Menu size={24} />
           </button>
         </header>
 
         <div className="w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8 bg-slate-50 min-h-screen print:bg-white print:p-0 print:min-h-0">
-      
-      {/* 1. DEPARTMENT OVERVIEW HEADER */}
-      <div className="print:hidden">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              {/* Decorative block for Amrita Theme */}
-              <div className="w-2 h-8 bg-[#8A1538] rounded-sm"></div>
-              <h1 className="text-3xl font-extrabold text-[#8A1538] tracking-tight">Department Review Report</h1>
+
+          {/* 1. DEPARTMENT OVERVIEW HEADER */}
+          <div className="print:hidden">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-6">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  {/* Decorative block for Amrita Theme */}
+                  <div className="w-2 h-8 bg-[#8A1538] rounded-sm"></div>
+                  <h1 className="text-3xl font-extrabold text-[#8A1538] tracking-tight">Department Review Report</h1>
+                </div>
+                <p className="text-gray-500 mt-2 flex items-center text-sm md:text-base ml-5">
+                  {departmentMetrics.department}
+                  <span className="mx-2">•</span>
+                  <CalendarDays className="w-4 h-4 mr-1.5" /> {departmentMetrics.period}
+                </p>
+              </div>
+              {/* Global Print button has been removed as requested */}
             </div>
-            <p className="text-gray-500 mt-2 flex items-center text-sm md:text-base ml-5">
-              {departmentMetrics.department} 
-              <span className="mx-2">•</span> 
-              <CalendarDays className="w-4 h-4 mr-1.5" /> {departmentMetrics.period}
-            </p>
+
+            {/* Aggregate Metric Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <MetricCard
+                icon={Users} title="Total Faculty Evaluated" value={departmentMetrics.totalFaculty}
+                subtitle="Active members this year" customBg="bg-blue-50" customText="text-blue-700"
+              />
+              <MetricCard
+                icon={GraduationCap} title="Avg Dept Feedback" value={`${departmentMetrics.avgFeedback}/5.0`}
+                subtitle="Aggregated rating" customBg="bg-green-50" customText="text-green-700"
+              />
+              <MetricCard
+                icon={TrendingUp} title="Overall Dept Pass Rate" value={`${departmentMetrics.overallPassRate}%`}
+                subtitle="Across courses & labs" customBg="bg-blue-50" customText="text-blue-600"
+              />
+              <MetricCard
+                icon={UserCheck} title="Avg Attendance Rate" value={`${departmentMetrics.avgAttendanceRate}%`}
+                subtitle="Department average" customBg="bg-rose-50" customText="text-[#8A1538]"
+              />
+              <MetricCard
+                icon={Award} title="Events & Workshops" value={departmentMetrics.totalEventsOrganized}
+                subtitle="Cumulative count" customBg="bg-amber-50" customText="text-amber-700"
+              />
+            </div>
           </div>
-          {/* Global Print button has been removed as requested */}
-        </div>
 
-        {/* Aggregate Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <MetricCard 
-            icon={Users} title="Total Faculty Evaluated" value={departmentMetrics.totalFaculty} 
-            subtitle="Active members this year" customBg="bg-blue-50" customText="text-blue-700" 
-          />
-          <MetricCard 
-            icon={GraduationCap} title="Avg Dept Feedback" value={`${departmentMetrics.avgFeedback}/5.0`} 
-            subtitle="Aggregated rating" customBg="bg-green-50" customText="text-green-700" 
-          />
-          <MetricCard 
-            icon={TrendingUp} title="Overall Dept Pass Rate" value={`${departmentMetrics.overallPassRate}%`} 
-            subtitle="Across courses & labs" customBg="bg-blue-50" customText="text-blue-600" 
-          />
-          <MetricCard 
-            icon={UserCheck} title="Avg Attendance Rate" value={`${departmentMetrics.avgAttendanceRate}%`} 
-            subtitle="Department average" customBg="bg-rose-50" customText="text-[#8A1538]" 
-          />
-          <MetricCard 
-            icon={Award} title="Events & Workshops" value={departmentMetrics.totalEventsOrganized} 
-            subtitle="Cumulative count" customBg="bg-amber-50" customText="text-amber-700" 
-          />
-        </div>
-      </div>
+          <hr className="border-gray-200 print:hidden" />
 
-      <hr className="border-gray-200 print:hidden" />
+          {/* 2. INDIVIDUAL FACULTY SECTION */}
+          <div className="print:hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                Individual Faculty Appraisals
+              </h2>
 
-      {/* 2. INDIVIDUAL FACULTY SECTION */}
-      <div className="print:hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center">
-            Individual Faculty Appraisals
-          </h2>
-          
-          {/* Search/Filter Box */}
-          <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+              {/* Search/Filter Box */}
+              <div className="relative w-full sm:w-72">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8A1538] focus:border-[#8A1538] sm:text-sm transition-all shadow-sm"
+                  placeholder="Search faculty by name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#8A1538] focus:border-[#8A1538] sm:text-sm transition-all shadow-sm"
-              placeholder="Search faculty by name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+
+            {/* Faculty List (Expandable Cards) */}
+            <div className="space-y-4">
+              {filteredFaculty.map((faculty) => (
+                <FacultyCard key={faculty.id} faculty={faculty} />
+              ))}
+
+              {filteredFaculty.length === 0 && (
+                <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                  <p className="text-gray-500">No faculty found matching "{searchTerm}"</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Faculty List (Expandable Cards) */}
-        <div className="space-y-4">
-          {filteredFaculty.map((faculty) => (
-            <FacultyCard key={faculty.id} faculty={faculty} />
-          ))}
-          
-          {filteredFaculty.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">No faculty found matching "{searchTerm}"</p>
-            </div>
-          )}
-        </div>
-      </div>
 
         </div>
       </main>

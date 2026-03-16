@@ -6,7 +6,9 @@ import {
     Terminal, ShieldAlert, Copy, FileText, ChevronRight, Tags, Calendar,
     UserCheck, Edit3, Zap, Printer, X
 } from 'lucide-react';
+import Logo from '../../components/Logo';
 import AdminSidebar from '../../components/AdminSidebar';
+import amritaLogo from '../../assets/amrita_logo.png';
 
 const WorkloadReportModal = ({ faculty, onClose }) => {
     if (!faculty) return null;
@@ -42,7 +44,8 @@ const WorkloadReportModal = ({ faculty, onClose }) => {
 
                 <div className="overflow-y-auto p-8 print:p-0 print:overflow-visible custom-scrollbar print:text-black">
                     <div className="border-b-4 border-[#8B0000] pb-6 mb-8 text-center print:pt-4">
-                        <h1 className="text-3xl font-black text-[#8B0000] uppercase tracking-wide">Amrita Vishwa Vidyapeetham</h1>
+                        <img src={amritaLogo} alt="Amrita Logo" className="h-16 w-auto mx-auto mb-4 object-contain" />
+                        <h1 className="text-3xl font-black uppercase tracking-wide"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span> <span className="text-[#8B0000]">for Amrita University</span></h1>
                         <h2 className="text-xl font-semibold text-slate-700 mt-2">Faculty Workload Allocation Report</h2>
                         <p className="text-slate-500 mt-1">Academic Year 2025-2026</p>
                     </div>
@@ -106,7 +109,7 @@ const WorkloadReportModal = ({ faculty, onClose }) => {
                     </div>
 
                     <div className="hidden print:block mt-12 pt-8 border-t border-slate-200 text-center">
-                        <p className="text-sm text-slate-500">System Generated Report • Amrita Academic Management System</p>
+                        <p className="text-sm text-slate-500">System Generated Report • <span className="font-bold"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span> for Amrita University</p>
                         <p className="text-sm text-slate-500 mt-1">Date Generated: {new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
@@ -225,10 +228,7 @@ const AdminWorkload = () => {
 
             <main className="flex-1 overflow-y-auto w-full relative">
                 <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 bg-white/80 backdrop-blur-md">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
-                        <span className="font-bold text-slate-800">Amrita</span>
-                    </div>
+                    <Logo type="scheduler" className="w-8 h-8" showText={false} textClassName="text-xl" />
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                         <Menu size={24} />
                     </button>
@@ -521,7 +521,7 @@ const AdminWorkload = () => {
 
                 <footer className="px-12 py-12 text-center border-t border-slate-100 bg-white mt-12">
                     <p className="text-slate-300 text-[9px] font-black uppercase tracking-[0.8em]">
-                        Amrita Vishwa Vidyapeetham • Academic Governance
+                        <span className="font-bold"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span> for Amrita University
                     </p>
                 </footer>
             </main>

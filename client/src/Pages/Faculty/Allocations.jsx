@@ -19,7 +19,7 @@ import {
 import Sidebar from '../../components/Sidebar';
 import { AppContext } from '../../context/AppContext';
 import { fetchPreferenceCourses, fetchMyPreferences, submitPreferences } from '../../utils/api';
-import amritaLogo from '../../assets/amrita_logo.png';
+import Logo from '../../components/Logo';
 
 const MAX_PICKS = 3;
 
@@ -276,8 +276,7 @@ const FacultyPreferenceForm = () => {
       <main className="flex-1 min-w-0">
         <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-30">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden"><img src={amritaLogo} alt="Amrita" className="w-full h-full object-contain" /></div>
-            <span className="font-bold text-slate-800">Amrita</span>
+            <Logo className="w-8 h-8 md:w-10 md:h-10 text-[#8B0000]" showText={false} />
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"><Menu size={24} /></button>
         </header>

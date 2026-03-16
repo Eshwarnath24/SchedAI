@@ -30,6 +30,7 @@ import InfoBlock from '../../components/InfoBlock';
 import { SLOTS } from '../../utils/constants';
 import { AppContext } from '../../context/AppContext';
 import { fetchFacultyDashboard } from '../../utils/api';
+import Logo from '../../components/Logo';
 
 const Dashboard = () => {
   const { events, currentTeacher, announcementsList, loggedInUser } = useContext(AppContext);
@@ -226,8 +227,7 @@ const Dashboard = () => {
         {/* Mobile Header Toggle */}
         <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
-            <span className="font-bold text-slate-800">Amrita</span>
+            <Logo type="scheduler" className="w-8 h-8" showText={true} textClassName="text-xl" />
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
             <Menu size={24} />
@@ -542,7 +542,7 @@ const Dashboard = () => {
 
         <footer className="px-12 py-10 text-center border-t border-slate-200/50 bg-white/30 backdrop-blur-sm">
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.6em]">
-            Amrita Vishwa Vidyapeetham • Ettimadai Campus • Academic Management
+            SchedAI for Amrita University
           </p>
         </footer>
         </>

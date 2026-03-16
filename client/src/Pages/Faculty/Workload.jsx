@@ -15,6 +15,7 @@ import WorkloadReportModal from '../../components/WorkloadReportModal';
 import { buildFacultyActivityReport } from '../../utils/generateReports';
 import { buildCompletedEntries, buildChartData, calculateTotals } from '../../utils/workloadPageUtils';
 import { fetchFacultyWorkloadReport } from '../../utils/api';
+import Logo from '../../components/Logo';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -343,17 +344,7 @@ export default function WorkloadPage() {
 
       <main className="flex-1 min-w-0 overflow-y-auto w-full relative print:overflow-visible print:h-auto">
         <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 print:hidden">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">
-              A
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-slate-800">Amrita</span>
-              <span className="text-[10px] text-slate-500">
-                {teacherDept}
-              </span>
-            </div>
-          </div>
+          <Logo className="w-8 h-8 md:w-10 md:h-10 text-[#8B0000]" showText={false} />
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -536,7 +527,7 @@ export default function WorkloadPage() {
         <footer className="bg-white border-t border-gray-100 py-6 sm:py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400 font-medium">
             <p className="text-center md:text-left">
-              Amrita Vishwa Vidyapeetham • University Management System
+              <span className="font-bold"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span> for Amrita University
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6">

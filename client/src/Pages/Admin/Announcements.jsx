@@ -4,6 +4,7 @@ import {
     Filter, Globe, ShieldAlert, Zap, Bell, CheckCircle2, File, Image, Paperclip, X
 } from 'lucide-react';
 import AdminSidebar from '../../components/AdminSidebar';
+import Logo from '../../components/Logo';
 
 const AdminAnnouncements = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -171,10 +172,7 @@ const AdminAnnouncements = () => {
 
             <main className="flex-1 overflow-y-auto w-full relative">
                 <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 bg-white/80 backdrop-blur-md">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
-                        <span className="font-bold text-slate-800">Amrita</span>
-                    </div>
+                    <Logo type="scheduler" className="w-8 h-8" showText={false} textClassName="text-xl" />
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                         <Menu size={24} />
                     </button>
@@ -447,7 +445,7 @@ const AdminAnnouncements = () => {
 
                 <footer className="px-12 py-12 text-center border-t border-slate-200/50 bg-white/30 backdrop-blur-sm mt-12">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.6em]">
-                        Amrita Vishwa Vidyapeetham • Ettimadai Campus • Academic Management
+                        <span className="font-bold"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span> for Amrita University
                     </p>
                 </footer>
             </main>

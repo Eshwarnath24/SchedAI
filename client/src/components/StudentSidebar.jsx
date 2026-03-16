@@ -11,6 +11,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import amritaLogo from '../assets/amrita_logo.png';
+import Logo from './Logo';
 
 const StudentSidebar = ({ mobileOpen, setMobileOpen, onLogout }) => {
   const location = useLocation();
@@ -49,13 +50,7 @@ const StudentSidebar = ({ mobileOpen, setMobileOpen, onLogout }) => {
           {/* Logo Area */}
           <div className="p-6 flex items-center justify-between lg:justify-start space-x-3">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md overflow-hidden">
-                <img src={amritaLogo} alt="Amrita" className="w-full h-full object-contain" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-gray-900 leading-tight">Amrita Vishwa</span>
-                <span className="font-bold text-gray-900 leading-tight">Vidyapeetham</span>
-              </div>
+              <Logo className="w-10 h-10 md:w-16 md:h-16 lg:w-16 lg:h-16 object-contain" showText={true} />
             </div>
             {mobileOpen && (
               <button onClick={() => setMobileOpen(false)} className="lg:hidden text-gray-500">

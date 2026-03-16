@@ -259,7 +259,7 @@ const ForgotPasswordPage = () => {
                             className="min-w-[80px] w-20 md:w-40 h-auto object-contain"
                             style={{ maxWidth: '140px', height: 'auto' }}
                         />
-                        <span className="font-bold text-2xl md:text-3xl tracking-wide">Amrita Portal</span>
+                        <span className="font-bold text-2xl md:text-3xl tracking-wide"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span>
                     </div>
 
                     {/* Middle: Content */}
@@ -290,7 +290,7 @@ const ForgotPasswordPage = () => {
 
                     {/* Bottom: Footer */}
                     <div className="relative z-10 text-xs text-white/50 flex justify-between items-center pt-8 border-t border-white/10 animate-fadeInUp">
-                        <span className="font-light tracking-wide">© 2026 Amrita Vishwa Vidyapeetham</span>
+                        <span className="font-light tracking-wide">© 2026 <span className="font-medium"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span> for Amrita University</span>
                         <div className="flex gap-6">
                             <Link to="/privacy" className="hover:text-white transition-colors duration-200">Privacy Policy</Link>
                             <Link to="/terms" className="hover:text-white transition-colors duration-200">Terms of Use</Link>
@@ -309,7 +309,7 @@ const ForgotPasswordPage = () => {
                             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center border border-white/10 backdrop-blur-sm">
                                 <span className="font-bold text-2xl font-serif">A</span>
                             </div>
-                            <span className="font-bold text-lg tracking-wide">Amrita Portal</span>
+                            <span className="font-bold text-lg tracking-wide"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span>
                         </div>
                         <div className="text-[10px] bg-white/20 px-2 py-1 rounded-full uppercase tracking-wider font-semibold">
                             <span>Recovery</span>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, RefreshCw, Download, TrendingUp, UserX } from 'lucide-react';
+import amritaLogo from '../assets/amrita_logo.png';
 
 const SimpleBarChart = ({ data }) => {
   const maxVal = Math.max(...data.map((d) => d.value));
@@ -124,7 +125,7 @@ const ExportReportModal = ({ isOpen, onClose, user, report }) => {
           <div className="bg-white shadow-sm border border-slate-200 p-10 min-h-[400px] mx-auto max-w-2xl report-printable">
             {/* Document Header */}
             <div className="text-center mb-8 border-b-2 border-slate-100 pb-6">
-              <div className="w-12 h-12 bg-rose-900 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm mx-auto mb-3">A</div>
+              <img src={amritaLogo} alt="Amrita Logo" className="h-12 w-auto mx-auto mb-3 object-contain" />
               <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide">Amrita Vishwa Vidyapeetham</h1>
               <p className="text-xs text-slate-500 font-bold tracking-wider mt-1">{(user?.department || 'CSE').toUpperCase()} DEPARTMENT</p>
             </div>

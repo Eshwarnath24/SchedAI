@@ -7,6 +7,7 @@ import Sidebar from '../components/Sidebar';
 import StudentSidebar from '../components/StudentSidebar';
 import { fetchCurrentAvailability } from '../utils/api';
 import AdminSidebar from '../components/AdminSidebar';
+import Logo from '../components/Logo';
 
 const getCardStyles = (type) => {
     let bgClass, textClass, iconClass, StatusIcon;
@@ -310,7 +311,7 @@ export default function Map() {
                 {/* Mobile header toggle */}
                 <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0 sticky left-0 w-full z-[110]">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
+                        <Logo className="w-8 h-8 md:w-10 md:h-10 text-[#8B0000]" showText={false} />
                         <span className="font-bold text-slate-800">Building Map</span>
                     </div>
                     <button

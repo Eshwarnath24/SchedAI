@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { parseStudentRollNumber, STUDENT_ROLL_FORMAT } from '../utils/rollNumber';
 import amritaLogo from '../assets/amrita_logo.png';
+import Logo from '../components/Logo';
 
 const AuthPage = () => {
     // Forgot Password Modal State
@@ -154,14 +155,19 @@ const AuthPage = () => {
                         backgroundSize: '32px 32px'
                     }}></div>
 
-                    <div className="flex items-center gap-4">
-                        <img
-                            src={amritaLogo}
-                            alt="Amrita Logo"
-                            className="min-w-[80px] w-20 md:w-40 h-auto object-contain"
-                            style={{ maxWidth: '140px', height: 'auto' }}
-                        />
-                        <span className="font-bold text-2xl md:text-3xl tracking-wide">Amrita Portal</span>
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="bg-white rounded-2xl shadow-lg flex items-center justify-center p-3 md:p-4 lg:p-5 w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 shrink-0">
+                            <Logo 
+                                className="w-full h-full object-contain" 
+                                showText={false}
+                            />
+                        </div>
+                        <div className="flex flex-col justify-center select-none">
+                            <span className="font-extrabold leading-none tracking-tight text-4xl md:text-5xl lg:text-6xl drop-shadow-sm">
+                                <span className="text-white">Sched</span>
+                                <span className="text-yellow-400">AI</span>
+                            </span>
+                        </div>
                     </div>
 
                     <div className="relative z-10 animate-fadeInUp">
@@ -189,7 +195,7 @@ const AuthPage = () => {
                     </div>
 
                     <div className="relative z-10 text-xs text-white/50 flex justify-between items-center pt-8 border-t border-white/10 animate-fadeInUp">
-                        <span className="font-light tracking-wide">© 2026 Amrita Vishwa Vidyapeetham</span>
+                        <span className="font-light tracking-wide">© 2026 <span className="font-medium"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></span> for Amrita University</span>
                         <div className="flex gap-6">
                             <a href="#" className="hover:text-white transition-colors duration-200">Privacy Policy</a>
                             <a href="#" className="hover:text-white transition-colors duration-200">Terms of Use</a>
@@ -204,10 +210,13 @@ const AuthPage = () => {
                         background: 'linear-gradient(135deg, #a50034 0%, #7a0026 100%)'
                     }}>
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/10 backdrop-blur-sm">
-                                <span className="font-bold text-lg font-serif">A</span>
+                            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center border border-white/10 backdrop-blur-sm shrink-0">
+                                <Logo className="w-7 h-7 object-contain" showText={false} />
                             </div>
-                            <span className="font-bold text-base tracking-wide">Amrita Portal</span>
+                            <span className="font-extrabold text-xl tracking-wide leading-none drop-shadow-sm">
+                                <span className="text-white">Sched</span>
+                                <span className="text-yellow-400">AI</span>
+                            </span>
                         </div>
                         <div className="text-[10px] bg-white/20 px-2 py-1 rounded-full uppercase tracking-wider font-semibold">
                             <span>{currentRole}</span>

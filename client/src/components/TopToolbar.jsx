@@ -1,4 +1,5 @@
 import React from 'react';
+import Logo from './Logo';
 import { Menu, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const TopToolbar = ({ onOpenSidebar, view, setView, title = "Academic Matrix", subtitle = "Odd Semester • Ettimadai" }) => {
@@ -7,7 +8,13 @@ const TopToolbar = ({ onOpenSidebar, view, setView, title = "Academic Matrix", s
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button onClick={onOpenSidebar} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"><Menu size={24} /></button>
+            <button 
+              onClick={onOpenSidebar} 
+              className="lg:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            <Logo className="w-8 h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 mr-2" showText={false} />
             <div className="text-left">
               <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none">{title}</h2>
               <p className="text-xs md:text-sm text-slate-400 font-bold uppercase tracking-widest mt-1">{subtitle}</p>

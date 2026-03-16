@@ -3,6 +3,7 @@ import StudentSidebar from '../../components/StudentSidebar';
 import { Menu, X } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import Logo from '../../components/Logo';
 
 const StudentLayout = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,10 +30,7 @@ const StudentLayout = ({ children }) => {
         
         {/* Top Mobile Header */}
         <header className="lg:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-[#A41034] rounded flex items-center justify-center text-white font-bold text-sm">A</div>
-             <span className="font-bold text-gray-900">Amrita</span>
-          </div>
+          <Logo type="scheduler" className="w-8 h-8" showText={true} textClassName="text-xl" />
           <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-gray-600">
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

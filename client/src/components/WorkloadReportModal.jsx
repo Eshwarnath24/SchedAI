@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText, Printer } from 'lucide-react';
+import amritaLogo from '../assets/amrita_logo.png';
 import {
   ResponsiveContainer,
   BarChart,
@@ -57,11 +58,11 @@ const WorkloadReportModal = ({ isOpen, onClose, stats, chartData = [], entries =
             {/* Official Report Header */}
             <div className="border-b-2 border-slate-900 pb-8 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-rose-900 text-white flex items-center justify-center font-bold rounded-xl text-3xl shadow-sm">A</div>
+                    <img src={amritaLogo} alt="Amrita Logo" className="h-16 w-auto object-contain" />
                     <div>
-                        <h1 className="text-2xl font-black text-slate-900 uppercase tracking-wide leading-tight">Amrita</h1>
-                        <h2 className="text-lg font-bold text-slate-700 uppercase tracking-wide leading-tight">Vishwa Vidyapeetham</h2>
-                        <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">University Management System</p>
+                        <h1 className="text-2xl font-black uppercase tracking-wide leading-tight"><span className="text-[#8B0000]">Sched</span><span className="text-amber-500">AI</span></h1>
+                        <h2 className="text-lg font-bold text-slate-700 uppercase tracking-wide leading-tight">for Amrita University</h2>
+                        <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Academic Management System</p>
                     </div>
                 </div>
                 <div className="text-left sm:text-right">

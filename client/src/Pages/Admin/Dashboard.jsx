@@ -13,12 +13,15 @@ import {
     Star,
     Menu,
     Loader2,
-    Users
+    Users,
+    Briefcase
 } from 'lucide-react';
 import LeaveForm from './LeaveForm';
 import Allocation from './Allocation';
 import AdminSidebar from '../../components/AdminSidebar';
+import InfoBlock from '../../components/InfoBlock';
 import { useLocation } from 'react-router-dom';
+import Logo from '../../components/Logo';
 
 /**
  * AMRITA BRAND THEME - VIBRANT RED & YELLOW
@@ -34,7 +37,48 @@ const customStyles = `
       "area-3 area-3 area-4 area-4 area-5 area-5"
       "area-6 area-6 area-6 area-6 area-5 area-5";
     gap: 20px;
+    gap: 20px;
     width: 100%;
+  }
+
+  @media (max-width: 1280px) {
+    .grid-container {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-areas:
+        "area-1 area-1 area-1 area-1"
+        "area-6 area-6 area-6 area-6"
+        "area-2 area-2 area-5 area-5"
+        "area-3 area-3 area-4 area-4";
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .grid-container {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "area-1 area-1"
+        "area-6 area-6"
+        "area-2 area-2"
+        "area-3 area-4"
+        "area-5 area-5";
+    }
+  }
+
+  @media (max-width: 768px) {
+    .grid-container {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "area-1"
+        "area-6"
+        "area-2"
+        "area-3"
+        "area-4"
+        "area-5";
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .area-1, .area-2, .area-3, .area-4, .area-5, .area-6 { min-height: auto !important; }
   }
 
   .area-1 { grid-area: area-1; min-height: 440px; }
@@ -139,8 +183,7 @@ const Dashboard = () => {
                 {/* Mobile Header Toggle */}
                 <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#8B0000] rounded-lg flex items-center justify-center text-white font-bold">A</div>
-                        <span className="font-bold text-slate-800">Amrita</span>
+                        <Logo type="scheduler" className="w-8 h-8" showText={false} textClassName="text-xl" />
                     </div>
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                         <Menu size={24} />
@@ -153,66 +196,73 @@ const Dashboard = () => {
                         <div className="grid-container h-auto">
 
                             {/* AREA 1: ADMIN PROFILE & STATS GRID */}
-                            <div className="area-1 glass-card p-0 flex flex-col bg-white overflow-hidden">
-                                <div className="p-10 pb-6 flex items-center gap-10 overflow-x-auto no-scrollbar">
-                                    <div className="relative flex-shrink-0 pt-4">
-                                        <div className="w-32 h-32 rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-4 border-white translate-y-2">
-                                            <img
-                                                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400"
-                                                alt="Admin"
-                                                className="w-full h-full object-cover object-top"
-                                            />
-                                        </div>
-                                        <div className="absolute top-0 left-0 flex gap-2">
-                                            <div className="bg-[#9b1c31] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-xl flex items-center gap-1.5 border-2 border-white whitespace-nowrap">
-                                                <Star size={10} fill="currentColor" /> PROFESSOR
-                                            </div>
-                                            <div className="bg-white text-slate-400 border border-slate-100 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm whitespace-nowrap">
-                                                <GraduationCap size={10} /> CSE DEPT
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div className="area-1 glass-card p-0 flex flex-col lg:flex-col bg-white overflow-hidden border border-slate-200 rounded-[2.5rem]">
+                                <div className="flex-1 relative p-8 md:p-12 bg-white flex flex-col justify-center">
+                                    <div className="absolute top-0 left-0 w-48 h-48 bg-[#8B0000]/5 rounded-full -ml-24 -mt-24 blur-3xl opacity-60" />
 
-                                    <div className="space-y-1 min-w-[280px]">
-                                        <h1 className="text-[42px] font-black text-[#1A202C] leading-none tracking-tight">
-                                            Good Morning,<br />
-                                            Srinivasan! <span className="inline-block animate-bounce">👋</span>
-                                        </h1>
-                                        <p className="text-sm font-bold text-[#64748b] mt-4">
-                                            You have <span className="text-[#9b1c31] font-black underline decoration-2 underline-offset-4">2 classes</span> Now.
-                                        </p>
+                                    <div className="relative z-10">
+                                        <div className="flex flex-wrap gap-2 mb-8">
+                                            <span className="flex items-center gap-1.5 px-4 py-1.5 bg-[#8B0000] text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-red-900/20">
+                                                <Briefcase size={14} />
+                                                PROFESSOR
+                                            </span>
+                                            <span className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-slate-200">
+                                                <GraduationCap size={14} />
+                                                CSE DEPT
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row items-center gap-8">
+                                            <div className="relative shrink-0">
+                                                <div className="absolute -inset-2 bg-red-100 rounded-[2.4rem] blur-xl opacity-40"></div>
+                                                <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-[2.2rem] bg-white p-1.5 shadow-2xl ring-1 ring-slate-100 overflow-hidden">
+                                                    <img
+                                                        src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400"
+                                                        alt="Admin"
+                                                        className="w-full h-full object-cover rounded-[1.8rem] object-top"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="text-center sm:text-left">
+                                                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-2">
+                                                    Good Morning,<br className="hidden md:block" /> Srinivasan! 👋
+                                                </h1>
+                                                <p className="text-slate-500 text-lg font-medium">
+                                                    You have <span className="text-[#8B0000] font-black underline decoration-[#8B0000]/20 underline-offset-4 pointer-events-none">2 classes</span> Now.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex-1 grid grid-cols-2 border-t border-slate-100 overflow-x-auto no-scrollbar min-w-full">
-                                    <div className="p-4 flex flex-col items-center justify-center border-r border-b border-slate-100 min-w-[150px]">
-                                        <div className="text-blue-500 mb-2"><BarChart3 size={20} /></div>
-                                        <div className="text-center">
-                                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Total Courses</p>
-                                            <p className="text-lg font-black text-[#1A202C]">06</p>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 flex flex-col items-center justify-center border-b border-slate-100 min-w-[150px]">
-                                        <div className="text-emerald-500 mb-2"><Users size={20} /></div>
-                                        <div className="text-center">
-                                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Students</p>
-                                            <p className="text-lg font-black text-[#1A202C]">248</p>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 flex flex-col items-center justify-center border-r border-slate-100 min-w-[150px]">
-                                        <div className="text-[#9b1c31] mb-2"><MapPin size={20} /></div>
-                                        <div className="text-center">
-                                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Campus</p>
-                                            <p className="text-xs font-black text-[#1A202C]">Ettimadai Main</p>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 flex flex-col items-center justify-center min-w-[150px]">
-                                        <div className="text-violet-500 mb-2"><CalendarIcon size={20} /></div>
-                                        <div className="text-center">
-                                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Office Room</p>
-                                            <p className="text-xs font-black text-[#1A202C]">C-201</p>
-                                        </div>
-                                    </div>
+                                <div className="w-full lg:w-auto grid grid-cols-2 border-t lg:border-t-0 lg:border-l border-slate-100 shrink-0 min-w-0 lg:min-w-[400px]">
+                                    <InfoBlock
+                                        icon={<BarChart3 />}
+                                        label="Total Courses"
+                                        value="06"
+                                        className="border-r border-b border-slate-100"
+                                        iconColor="text-blue-500"
+                                    />
+                                    <InfoBlock
+                                        icon={<Users />}
+                                        label="Students"
+                                        value="248"
+                                        className="border-b border-slate-100"
+                                        iconColor="text-emerald-500"
+                                    />
+                                    <InfoBlock
+                                        icon={<MapPin />}
+                                        label="Campus"
+                                        value="Ettimadai Main"
+                                        className="border-r border-slate-100"
+                                        iconColor="text-[#8B0000]"
+                                    />
+                                    <InfoBlock
+                                        icon={<CalendarIcon />}
+                                        label="Office Room"
+                                        value="C-201"
+                                        iconColor="text-violet-500"
+                                    />
                                 </div>
                             </div>
 
@@ -323,7 +373,7 @@ const Dashboard = () => {
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1">
                                         <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-10">Efficiency Dashboard</h2>
-                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-12">
+                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
                                             <div className="space-y-4">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Faculty Load</p>
                                                 <span className="text-5xl font-black text-brand tracking-tighter">84%</span>
