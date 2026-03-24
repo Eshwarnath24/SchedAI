@@ -1,6 +1,6 @@
-# SchedAI - Smart Scheduling Assistant
+# SchedAI - Smart Academic Scheduling System
 
-An intelligent scheduling application designed to streamline resource allocation, workload management, and team coordination. SchedAI combines AI-powered insights with an intuitive interface to simplify project and event scheduling.
+An intelligent, full-stack academic scheduling platform built for **Amrita University** that automates timetable generation using a **Rust-powered genetic algorithm**, manages faculty workload, leave requests, announcements, and provides role-based dashboards for **Admins**, **Faculty**, and **Students**.
 
 **Live Demo:** [https://sched-ai-opal.vercel.app/](https://sched-ai-opal.vercel.app/)
 
@@ -8,32 +8,88 @@ An intelligent scheduling application designed to streamline resource allocation
 
 ## Features
 
-- **Dashboard** - Central hub for quick overview and key metrics
-- **TimeTable** - Visual scheduling and calendar management
-- **Allocations** - Manage and track resource allocations
-- **Workload Analysis** - Monitor team workload and capacity planning
-- **Announcements** - Communicate updates and important information
-- **Leave Management** - Track and manage employee leave requests
-- **Event Management** - Create, edit, and manage events with modal interfaces
-- **Responsive Design** - Works seamlessly across desktop and mobile devices
-- **Real-time Updates** - Instant notifications and status updates
+### 🔐 Authentication & Authorization
+- Role-based login (Student, Faculty, Admin) with JWT authentication
+- Secure password hashing with bcrypt
+- Forgot Password flow with email-based OTP verification
+- Protected routes with role-based access control
+
+### 📊 Admin Panel
+- **Dashboard** – Overview of faculty, courses, rooms, sections, and key metrics
+- **Timetable Management** – Generate & view master timetables powered by the Rust scheduling engine
+- **Workload Analysis** – Monitor and balance faculty workload distribution
+- **Reports** – Export detailed reports (PDF) with KPIs, efficiency gauges, and engagement charts
+- **Announcements** – Create, edit, and broadcast announcements to faculty and students
+
+### 👨‍🏫 Faculty Portal
+- **Dashboard** – Personalized overview with teaching schedule and workload summary
+- **Timetable** – View individual weekly timetable with day/period grid
+- **Allocations** – View assigned courses, rooms, and sections
+- **Workload** – Detailed workload breakdown with visual analytics
+- **Leave Management** – Submit and track leave requests
+- **Reports** – Generate and download personal workload reports
+- **Announcements** – View announcements from the administration
+
+### 🎓 Student Portal
+- **Dashboard** – Quick access to section timetable and announcements
+- **Section Timetable** – View class-wise weekly schedule
+- **Teacher's Timetable** – Look up any teacher's schedule
+- **Announcements** – Stay updated with university-wide announcements
+
+### 🗺️ Campus Map
+- Interactive campus map for navigation
+
+### 🔔 Notifications
+- Event-driven email notifications (class cancellations, leave approvals) via Nodemailer
+- In-app toast notifications for real-time feedback
+
+### 📱 Responsive Design
+- Fully responsive UI with mobile-first approach
+- Works seamlessly across desktop, tablet, and mobile devices
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-- **React 19** - UI library
-- **Vite** - Build tool and dev server
-- **React Router DOM** - Client-side routing
-- **Tailwind CSS** - Utility-first CSS framework
-- **PostCSS** - CSS processing
-- **Lucide React** - Icon library
-- **React Toastify** - Toast notifications
+| Technology | Purpose |
+|---|---|
+| **React 19** | UI library |
+| **Vite 7** | Build tool & dev server |
+| **React Router DOM 7** | Client-side routing |
+| **Tailwind CSS 3** | Utility-first CSS framework |
+| **Recharts** | Data visualization & charts |
+| **Lucide React** | Icon library |
+| **React Toastify** | Toast notifications |
+| **html2canvas + jsPDF** | PDF report generation |
 
-### Development
-- **ESLint** - Code linting and quality
-- **Autoprefixer** - CSS vendor prefixes
+### Backend
+| Technology | Purpose |
+|---|---|
+| **Node.js + Express** | REST API server |
+| **MongoDB + Mongoose** | Database & ODM |
+| **JWT (jsonwebtoken)** | Authentication tokens |
+| **bcryptjs** | Password hashing |
+| **Nodemailer** | Email notifications |
+| **Handlebars** | Email templates |
+| **EventEmitter2** | Event-driven notification system |
+
+### Scheduling Engine
+| Technology | Purpose |
+|---|---|
+| **Rust** | High-performance scheduler worker |
+| **Genetic Algorithm** | Timetable optimization using mutation & crossover |
+| **Rayon** | Parallel/multi-threaded evaluation |
+| **Serde** | JSON serialization for Node.js ↔ Rust communication |
+
+### Testing
+| Technology | Purpose |
+|---|---|
+| **Vitest** | Frontend unit & component testing |
+| **React Testing Library** | React component testing |
+| **Jest** | Backend unit & integration testing |
+| **Supertest** | HTTP API testing |
+| **MongoDB Memory Server** | In-memory DB for test isolation |
 
 ---
 
@@ -41,37 +97,96 @@ An intelligent scheduling application designed to streamline resource allocation
 
 ```
 SchedAI/
-├── client/                    # React frontend application
+├── client/                          # React frontend application
 │   ├── src/
-│   │   ├── components/        # Reusable React components
-│   │   │   ├── AddEventModal.jsx
-│   │   │   ├── AnnouncementModal.jsx
-│   │   │   ├── EditEventModal.jsx
-│   │   │   ├── InfoBlock.jsx
+│   │   ├── Pages/
+│   │   │   ├── Admin/               # Admin portal pages
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── TimeTable.jsx
+│   │   │   │   ├── Workload.jsx
+│   │   │   │   ├── Report.jsx
+│   │   │   │   ├── Allocation.jsx
+│   │   │   │   ├── Announcements.jsx
+│   │   │   │   └── LeaveForm.jsx
+│   │   │   ├── Faculty/             # Faculty portal pages
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── TimeTable.jsx
+│   │   │   │   ├── Workload.jsx
+│   │   │   │   ├── Reports.jsx
+│   │   │   │   ├── Allocations.jsx
+│   │   │   │   ├── Announcements.jsx
+│   │   │   │   └── LeaveForm.jsx
+│   │   │   ├── Student/             # Student portal pages
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── SectionTimeTable.jsx
+│   │   │   │   ├── TeachersTimeTable.jsx
+│   │   │   │   ├── Announcements.jsx
+│   │   │   │   └── Layout.jsx
+│   │   │   ├── AuthPage.jsx         # Login page with role selection
+│   │   │   ├── ForgotPassword.jsx   # Password recovery flow
+│   │   │   └── Map.jsx              # Interactive campus map
+│   │   ├── components/              # Reusable UI components
+│   │   │   ├── AdminSidebar.jsx
 │   │   │   ├── Sidebar.jsx
-│   │   │   └── TopToolbar.jsx
-│   │   ├── Pages/             # Page components
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── TimeTable.jsx
-│   │   │   ├── Allocations.jsx
-│   │   │   ├── Workload.jsx
-│   │   │   ├── Announcements.jsx
-│   │   │   └── LeaveForm.jsx
-│   │   ├── context/           # React Context for state management
-│   │   │   └── AppContext.jsx
-│   │   ├── utils/             # Utility functions and constants
-│   │   │   ├── announcements.js
-│   │   │   └── constants.js
-│   │   ├── App.jsx            # Main App component
-│   │   ├── main.jsx           # Application entry point
-│   │   ├── App.css
-│   │   └── index.css
-│   ├── public/                # Static assets
+│   │   │   ├── StudentSidebar.jsx
+│   │   │   ├── TopToolbar.jsx
+│   │   │   ├── TimetableGrid.jsx
+│   │   │   ├── Logo.jsx
+│   │   │   ├── EfficiencyGauge.jsx
+│   │   │   ├── EngagementCurveChart.jsx
+│   │   │   ├── ExportReportModal.jsx
+│   │   │   ├── WorkloadReportModal.jsx
+│   │   │   ├── ReportKPICard.jsx
+│   │   │   ├── AddEventModal.jsx
+│   │   │   ├── EditEventModal.jsx
+│   │   │   ├── AnnouncementModal.jsx
+│   │   │   └── InfoBlock.jsx
+│   │   ├── context/
+│   │   │   └── AppContext.jsx       # Global state management
+│   │   ├── utils/                   # Utilities, API calls, mock data
+│   │   ├── __tests__/               # Frontend test suites
+│   │   ├── App.jsx                  # Root component with routing
+│   │   └── main.jsx                 # Application entry point
 │   ├── package.json
 │   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   └── eslint.config.js
+│   └── tailwind.config.js
+│
+├── server/                          # Backend application
+│   ├── server.js                    # Express server entry point
+│   ├── BackendAndDB/
+│   │   ├── DB_models/               # Mongoose schemas
+│   │   │   ├── User.js
+│   │   │   ├── Student.js
+│   │   │   ├── Course.js
+│   │   │   ├── Room.js
+│   │   │   ├── Section.js
+│   │   │   ├── schedule.js
+│   │   │   ├── ScheduleOverride.js
+│   │   │   ├── FacultyPreference.js
+│   │   │   ├── announcement.js
+│   │   │   ├── leaveRequest.js
+│   │   │   ├── timeSlot.js
+│   │   │   ├── workload.js
+│   │   │   └── task.js
+│   │   ├── controllers/             # Route handlers & business logic
+│   │   ├── routes/                  # API route definitions
+│   │   ├── middleware/              # JWT auth middleware
+│   │   ├── services/                # Faculty data aggregation service
+│   │   ├── notifications/           # Event-driven email notification system
+│   │   └── mail/                    # Nodemailer service & Handlebars templates
+│   ├── scheduler_worker/            # Rust scheduling engine
+│   │   ├── Cargo.toml
+│   │   └── src/                     # Genetic algorithm implementation
+│   ├── tests/                       # Backend test suites
+│   │   ├── unit/
+│   │   ├── integration/
+│   │   └── e2e/
+│   ├── seed.js                      # Database seeding script
+│   ├── seedStudents.js              # Student data seeder
+│   └── package.json
+│
+├── E2E_TEST_REPORT.md
+├── Integration_Testing_Report.md
 ├── LICENSE
 └── README.md
 ```
@@ -81,8 +196,10 @@ SchedAI/
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
+- **MongoDB** (local instance or MongoDB Atlas)
+- **Rust** (for building the scheduler worker — optional for frontend-only development)
 
 ### Installation
 
@@ -92,100 +209,127 @@ SchedAI/
    cd SchedAI
    ```
 
-2. **Install dependencies**
+2. **Set up the backend**
    ```bash
-   cd client
+   cd server
    npm install
    ```
 
-3. **Start the development server**
+3. **Configure environment variables**
+   
+   Create a `.env` file in `server/` with:
+   ```env
+   MONGO_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   PORT=5000
+   MAIL_HOST=your_smtp_host
+   MAIL_PORT=your_smtp_port
+   MAIL_USER=your_email
+   MAIL_PASS=your_email_password
+   ```
+
+4. **Seed the database** (optional)
+   ```bash
+   node seed.js
+   node seedStudents.js
+   ```
+
+5. **Build the Rust scheduler** (optional)
+   ```bash
+   npm run build-rust
+   ```
+
+6. **Start the backend server**
    ```bash
    npm run dev
    ```
+   The API server will be available at `http://localhost:5000`
 
+7. **Set up the frontend**
+   ```bash
+   cd ../client
+   npm install
+   ```
+
+8. **Start the frontend dev server**
+   ```bash
+   npm run dev
+   ```
    The application will be available at `http://localhost:5173`
 
-### Build for Production
+---
 
-```bash
-npm run build
-```
+## API Endpoints
 
-This creates an optimized production build in the `dist/` directory.
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
+| Route | Description |
+|---|---|
+| `POST /api/auth/login` | User authentication |
+| `POST /api/auth/register` | User registration |
+| `GET /api/schedule` | Fetch timetable data |
+| `POST /api/schedule/generate` | Trigger schedule generation |
+| `GET /api/leaves` | Fetch leave requests |
+| `POST /api/leaves` | Submit leave request |
+| `GET /api/announcements` | Fetch announcements |
+| `POST /api/announcements` | Create announcement |
+| `GET /api/reports` | Fetch report data |
+| `GET /api/dashboard` | Dashboard metrics |
+| `GET /api/courses` | Course information |
 
 ---
 
 ## Available Scripts
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run ESLint to check code quality
+### Frontend (`client/`)
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server with HMR |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint for code quality |
+| `npm run test` | Run Vitest test suites |
+| `npm run test:watch` | Run tests in watch mode |
+
+### Backend (`server/`)
+| Command | Description |
+|---|---|
+| `npm run dev` | Start server with nodemon (hot reload) |
+| `npm start` | Start server (production) |
+| `npm test` | Run all Jest tests |
+| `npm run test:unit` | Run unit tests only |
+| `npm run test:integration` | Run integration tests only |
+| `npm run build-rust` | Compile Rust scheduler worker |
 
 ---
 
-## Usage
+## Scheduling Engine
 
-### Navigation
-Use the **Sidebar** component to navigate between different sections:
-- Dashboard - Overview and analytics
-- TimeTable - Schedule management
-- Allocations - Resource distribution
-- Workload - Team workload tracking
-- Announcements - Updates and notices
-- LeaveForm - Leave request submission
+The timetable generation is powered by a **Rust-based genetic algorithm** that optimizes class schedules by considering:
 
-### Event Management
-- Click **Add Event** to create new events via `AddEventModal`
-- Use **Edit** button to modify existing events via `EditEventModal`
-- Announcements can be created/edited via `AnnouncementModal`
+- Faculty preferences and availability
+- Room capacity and type constraints
+- Section-specific requirements
+- Time slot conflicts and constraints
+- Workload balancing across faculty
 
-### Notifications
-Toast notifications provide real-time feedback for actions and updates.
-
----
-
-## Component Overview
-
-| Component | Purpose |
-|-----------|---------|
-| `Sidebar` | Navigation menu and app structure |
-| `TopToolbar` | Header with controls and information |
-| `AddEventModal` | Form to create new events |
-| `EditEventModal` | Form to modify existing events |
-| `AnnouncementModal` | Interface for announcements |
-| `InfoBlock` | Reusable information display card |
-
----
-
-## Context & State Management
-
-The application uses **React Context** (`AppContext.jsx`) for global state management, providing centralized access to:
-- User data
-- Event information
-- Application settings
-- Shared functionality
+The Rust worker communicates with the Node.js backend via JSON I/O, ensuring high-performance schedule computation with multi-threaded evaluation using **Rayon**.
 
 ---
 
 ## Deployment
 
-The application is deployed on **Vercel**. Any push to the main branch triggers automatic deployment.
+- **Frontend** — Deployed on **Vercel** with automatic deployments on push to `main`
+- **Backend** — Can be deployed on any Node.js hosting platform (Render, Railway, AWS, etc.)
+- **Database** — MongoDB Atlas (cloud) or local MongoDB instance
 
 ---
 
 ## Contributing
 
-1. Create a feature branch: `git checkout -b feature/YourFeature`
-2. Commit changes: `git commit -m 'Add YourFeature'`
-3. Push to branch: `git push origin feature/YourFeature`
-4. Open a Pull Request
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/YourFeature`
+3. Commit changes: `git commit -m 'Add YourFeature'`
+4. Push to branch: `git push origin feature/YourFeature`
+5. Open a Pull Request
 
 ---
 
@@ -197,8 +341,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Support
 
-For issues, questions, or suggestions, please open an issue on the GitHub repository or contact the development team.
+For issues, questions, or suggestions, please open an issue on the [GitHub repository](https://github.com/Eshwarnath24/SchedAI) or contact the development team.
 
 ---
 
-**Built with ❤️ for better scheduling**
+**Built with ❤️ for smarter academic scheduling at Amrita University**
